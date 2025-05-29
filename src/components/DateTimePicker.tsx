@@ -64,7 +64,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             mode="single"
             selected={selectedDateTime}
             onSelect={handleDateSelect}
-            disabled={(date) => date > maxDate || date < new Date().setHours(0, 0, 0, 0)}
+            disabled={(date) => date > maxDate}
             initialFocus
             className="pointer-events-auto"
           />
