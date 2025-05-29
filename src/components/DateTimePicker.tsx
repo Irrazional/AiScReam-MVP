@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarComponent } from './ui/calendar';
 import { cn } from '../lib/utils';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 interface DateTimePickerProps {
   selectedDateTime: Date;
@@ -17,6 +17,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   onDateTimeChange,
 }) => {
   const [open, setOpen] = React.useState(false);
+
+  // Calculate the maximum date (7 days from today)
+  const maxDate = addDays(new Date(), 7);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -61,6 +64,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             mode="single"
             selected={selectedDateTime}
             onSelect={handleDateSelect}
+            disabled={(date) => date > maxDate || date < new Date().setHours(0, 0, 0, 0)}
             initialFocus
             className="pointer-events-auto"
           />
