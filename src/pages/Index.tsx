@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WeatherSidebar } from '../components/WeatherSidebar';
 import { FloodMap } from '../components/FloodMap';
@@ -14,23 +13,20 @@ const IndexContent = () => {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
 
-  // Sample Jakarta area locations (you can expand this)
-  const jakartaLocations = [
-    { name: 'Kapukmuara', coordinates: [-6.125, 106.7671] as [number, number] },
-    { name: 'Warakas', coordinates: [-6.1226, 106.8778] as [number, number] },
-    { name: 'Pegangsaandua', coordinates: [-6.1616, 106.9139] as [number, number] },
-    { name: 'Ancol', coordinates: [-6.1235, 106.8364] as [number, number] },
-    { name: 'Sungaibaranging', coordinates: [-6.1369, 106.8653] as [number, number] },
-    { name: 'Pademangan Timur', coordinates: [-6.1419, 106.848] as [number, number] },
-    { name: 'Kelapagading Barat', coordinates: [-6.1552, 106.8968] as [number, number] },
-    { name: 'Sungaibambu', coordinates: [-6.1295, 106.8845] as [number, number] },
+  // Jakarta watergate locations
+  const watergateLocations = [
+    { name: 'Manggarai', coordinates: [-6.207903028, 106.848439] as [number, number] },
+    { name: 'Krukut Hulu', coordinates: [-6.317916, 106.920893] as [number, number] },
+    { name: 'Angke Hulu', coordinates: [-6.189635368, 106.7195774] as [number, number] },
+    { name: 'Sunter', coordinates: [-6.126688002, 106.829601] as [number, number] },
+    { name: 'Pulo Gadung', coordinates: [-6.109, 106.906417] as [number, number] },
   ];
 
   useEffect(() => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
-        const weatherPromises = jakartaLocations.map(async (location) => {
+        const weatherPromises = watergateLocations.map(async (location) => {
           const weather = await fetchWeatherData(
             location.coordinates[0], 
             location.coordinates[1], 
