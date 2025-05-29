@@ -18,7 +18,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
-  const [mapTilerKey, setMapTilerKey] = useState<string>('');
+  const [mapTilerKey, setMapTilerKey] = useState<string>('jNtUhxpPD0rde9ksHxlf');
 
   const getRiskColor = (risk: number) => {
     if (risk >= 80) return '#ef4444'; // red
@@ -48,21 +48,28 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize the map
-    const map = L.map(mapRef.current).setView([-6.2, 106.85], 11);
+    // Initialize the map centered on Jakarta with restricted bounds
+    const jakartaBounds = L.latLngBounds(
+      L.latLng(-6.4, 106.6), // Southwest coordinates
+      L.latLng(-5.9, 107.1)  // Northeast coordinates
+    );
 
-    if (mapTilerKey) {
-      // Use MapTiler with API key
-      L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
-        attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18,
-      }).addTo(map);
-    } else {
-      // Fallback to OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18,
-      }).addTo(map);
+    const map = L.map(mapRef.current, {
+      maxBounds: jakartaBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 10,
+      maxZoom: 16
+    }).setView([-6.2, 106.85], 11);
+
+    // Use the custom MapTiler style
+    L.tileLayer(`https://api.maptiler.com/maps/01971b81-874d-7958-84f1-41e9bc23053f/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 16,
+    }).addTo(map);
+
+    // Set the map container z-index lower than popover
+    if (mapRef.current) {
+      mapRef.current.style.zIndex = '1';
     }
 
     mapInstanceRef.current = map;
@@ -150,27 +157,27 @@ export const FloodMap: React.FC<FloodMapProps> = ({
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
       
-      {/* Legend */}
-      <div className="absolute bottom-6 left-6 bg-gray-900/90 backdrop-blur-sm rounded-lg p-4 border border-gray-700">
-        <h4 className="text-white font-medium mb-3">Flood Risk Level</h4>
+      {/* Legend with updated colors */}
+      <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-rich_black-400/95 backdrop-blur-sm rounded-lg p-4 border border-paynes_gray-300 dark:border-paynes_gray-500 z-10">
+        <h4 className="text-paynes_gray-700 dark:text-mint_cream-500 font-medium mb-3">Flood Risk Level</h4>
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span className="text-gray-300 text-sm">High Risk (80%+)</span>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">High Risk (80%+)</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span className="text-gray-300 text-sm">Moderate Risk (60-79%)</span>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Moderate Risk (60-79%)</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <span className="text-gray-300 text-sm">Low Risk (40-59%)</span>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Low Risk (40-59%)</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-gray-300 text-sm">Minimal Risk (0-39%)</span>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Minimal Risk (0-39%)</span>
           </div>
         </div>
       </div>

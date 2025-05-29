@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { WeatherSidebar } from '../components/WeatherSidebar';
 import { FloodMap } from '../components/FloodMap';
@@ -5,6 +6,7 @@ import { Header } from '../components/Header';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { LocationData, WeatherData } from '../types/weather';
 import { fetchWeatherData } from '../services/weatherService';
+import { jakartaUtaraVillages } from '../data/jakartaUtaraVillages';
 
 const IndexContent = () => {
   const [locations, setLocations] = useState<LocationData[]>([]);
@@ -15,18 +17,29 @@ const IndexContent = () => {
 
   // Jakarta watergate locations
   const watergateLocations = [
-    { name: 'Manggarai', coordinates: [-6.207903028, 106.848439] as [number, number] },
-    { name: 'Krukut Hulu', coordinates: [-6.317916, 106.920893] as [number, number] },
-    { name: 'Angke Hulu', coordinates: [-6.189635368, 106.7195774] as [number, number] },
-    { name: 'Sunter', coordinates: [-6.126688002, 106.829601] as [number, number] },
-    { name: 'Pulo Gadung', coordinates: [-6.109, 106.906417] as [number, number] },
+    { name: 'Manggarai', coordinates: [-6.207903028, 106.848439] as [number, number], type: 'watergate' },
+    { name: 'Krukut Hulu', coordinates: [-6.317916, 106.920893] as [number, number], type: 'watergate' },
+    { name: 'Angke Hulu', coordinates: [-6.189635368, 106.7195774] as [number, number], type: 'watergate' },
+    { name: 'Sunter', coordinates: [-6.126688002, 106.829601] as [number, number], type: 'watergate' },
+    { name: 'Pulo Gadung', coordinates: [-6.109, 106.906417] as [number, number], type: 'watergate' },
+  ];
+
+  // Combine watergates with Jakarta Utara villages
+  const allLocations = [
+    ...watergateLocations,
+    ...jakartaUtaraVillages.map(village => ({
+      name: village.name,
+      coordinates: village.coordinates,
+      type: 'village',
+      kecamatan: village.kecamatan
+    }))
   ];
 
   useEffect(() => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
-        const weatherPromises = watergateLocations.map(async (location) => {
+        const weatherPromises = allLocations.map(async (location) => {
           const weather = await fetchWeatherData(
             location.coordinates[0], 
             location.coordinates[1], 
@@ -63,7 +76,7 @@ const IndexContent = () => {
   });
 
   return (
-    <div className="min-h-screen bg-beige-500 text-mint_cream-500 dark:bg-rich_black-500 dark:text-mint_cream-500">
+    <div className="min-h-screen bg-mint_cream-500 text-paynes_gray-700 dark:bg-rich_black-500 dark:text-mint_cream-500">
       <Header 
         selectedDateTime={selectedDateTime}
         onDateTimeChange={setSelectedDateTime}
