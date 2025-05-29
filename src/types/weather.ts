@@ -13,6 +13,8 @@ export interface LocationData {
   id: string;
   name: string;
   coordinates: [number, number]; // [latitude, longitude]
+  type?: string; // 'watergate' or 'village'
+  kecamatan?: string;
   weather?: WeatherData;
 }
 

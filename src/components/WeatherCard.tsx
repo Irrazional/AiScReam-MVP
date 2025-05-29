@@ -29,14 +29,24 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
     return 'Minimal Risk';
   };
 
+  const isWatergate = location.type === 'watergate';
+  
+  const getBorderStyle = () => {
+    if (isSelected) {
+      return isWatergate 
+        ? 'border-sky_blue-500 bg-paynes_gray-300 dark:bg-rich_black-300' 
+        : 'border-sky_blue-500 bg-paynes_gray-300 dark:bg-rich_black-300';
+    }
+    
+    return isWatergate
+      ? 'border-sky_blue-400 hover:border-sky_blue-300 hover:bg-paynes_gray-350 dark:border-sky_blue-500 dark:hover:border-sky_blue-400'
+      : 'border-paynes_gray-300 hover:border-paynes_gray-200 hover:bg-paynes_gray-350 dark:border-rich_black-300 dark:hover:border-rich_black-200';
+  };
+
   return (
     <div
       onClick={onSelect}
-      className={`bg-paynes_gray-400 rounded-lg p-4 cursor-pointer transition-all duration-200 border dark:bg-rich_black-400 ${
-        isSelected
-          ? 'border-sky_blue-500 bg-paynes_gray-300 dark:bg-rich_black-300'
-          : 'border-paynes_gray-300 hover:border-paynes_gray-200 hover:bg-paynes_gray-350 dark:border-rich_black-300 dark:hover:border-rich_black-200'
-      }`}
+      className={`bg-paynes_gray-400 rounded-lg p-4 cursor-pointer transition-all duration-200 border dark:bg-rich_black-400 ${getBorderStyle()}`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-start space-x-3">
@@ -49,10 +59,19 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           )}
           <div>
             <div className="flex items-center space-x-2 mb-1">
-              <MapPin className="w-4 h-4 text-beige-400" />
+              {isWatergate ? (
+                <Droplets className="w-4 h-4 text-sky_blue-500" />
+              ) : (
+                <MapPin className="w-4 h-4 text-beige-400" />
+              )}
               <h3 className="text-mint_cream-500 font-medium">{location.name}</h3>
             </div>
-            <p className="text-beige-400 text-sm">
+            <div className="flex items-center space-x-2">
+              <span className={`text-xs px-2 py-1 rounded-full ${isWatergate ? 'bg-sky_blue-900/30 text-sky_blue-400' : 'bg-beige-900/30 text-beige-400'}`}>
+                {isWatergate ? 'Watergate' : 'Village'}
+              </span>
+            </div>
+            <p className="text-beige-400 text-sm mt-1">
               {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}
             </p>
           </div>

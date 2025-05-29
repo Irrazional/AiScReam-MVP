@@ -7,6 +7,7 @@ import { ThemeProvider } from '../components/ThemeProvider';
 import { LocationData, WeatherData } from '../types/weather';
 import { fetchWeatherData } from '../services/weatherService';
 import { jakartaUtaraVillages } from '../data/jakartaUtaraVillages';
+import { FilterOptions } from '../components/LocationFilter';
 
 const IndexContent = () => {
   const [locations, setLocations] = useState<LocationData[]>([]);
@@ -14,6 +15,10 @@ const IndexContent = () => {
   const [sortBy, setSortBy] = useState<'name' | 'risk' | 'temperature'>('name');
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
+  const [filters, setFilters] = useState<FilterOptions>({
+    showWatergates: true,
+    showVillages: true,
+  });
 
   // Jakarta watergate locations
   const watergateLocations = [
@@ -75,6 +80,15 @@ const IndexContent = () => {
     }
   });
 
+  // Filter locations for the map based on current filters
+  const filteredMapLocations = locations.filter(location => {
+    if (location.type === 'watergate') {
+      return filters.showWatergates;
+    } else {
+      return filters.showVillages;
+    }
+  });
+
   return (
     <div className="min-h-screen bg-mint_cream-500 text-paynes_gray-700 dark:bg-rich_black-500 dark:text-mint_cream-500">
       <Header 
@@ -89,10 +103,12 @@ const IndexContent = () => {
           onSortChange={setSortBy}
           onLocationSelect={setSelectedLocation}
           selectedLocation={selectedLocation}
+          filters={filters}
+          onFilterChange={setFilters}
         />
         <div className="flex-1">
           <FloodMap
-            locations={locations}
+            locations={filteredMapLocations}
             selectedLocation={selectedLocation}
             onLocationSelect={setSelectedLocation}
           />

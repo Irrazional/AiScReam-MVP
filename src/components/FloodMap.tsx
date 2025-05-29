@@ -27,10 +27,29 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     return '#22c55e'; // green
   };
 
-  const createCustomIcon = (color: string, isSelected: boolean = false) => {
+  const createWatergateIcon = (color: string, isSelected: boolean = false) => {
+    const size = isSelected ? 24 : 18;
+    return L.divIcon({
+      className: 'custom-watergate-marker',
+      html: `<div style="
+        width: ${size}px; 
+        height: ${size}px; 
+        background-color: ${color}; 
+        border: 3px solid white; 
+        border-radius: 50% 50% 50% 0%;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        ${isSelected ? 'transform: rotate(-45deg) scale(1.2);' : ''}
+      "></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  };
+
+  const createVillageIcon = (color: string, isSelected: boolean = false) => {
     const size = isSelected ? 20 : 15;
     return L.divIcon({
-      className: 'custom-marker',
+      className: 'custom-village-marker',
       html: `<div style="
         width: ${size}px; 
         height: ${size}px; 
@@ -61,8 +80,8 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       maxZoom: 16
     }).setView([-6.2, 106.85], 11);
 
-    // Use the custom MapTiler style
-    L.tileLayer(`https://api.maptiler.com/maps/01971b81-874d-7958-84f1-41e9bc23053f/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
+    // Use the new MapTiler topo style
+    L.tileLayer(`https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
       attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 16,
     }).addTo(map);
@@ -97,13 +116,18 @@ export const FloodMap: React.FC<FloodMapProps> = ({
 
       const color = getRiskColor(location.weather.floodRisk);
       const isSelected = selectedLocation?.id === location.id;
-      const icon = createCustomIcon(color, isSelected);
+      const isWatergate = location.type === 'watergate';
+      
+      const icon = isWatergate 
+        ? createWatergateIcon(color, isSelected)
+        : createVillageIcon(color, isSelected);
 
       const marker = L.marker([location.coordinates[0], location.coordinates[1]], { icon })
         .addTo(mapInstanceRef.current!)
         .bindPopup(`
           <div class="p-2">
             <h3 class="font-medium text-gray-900">${location.name}</h3>
+            <p class="text-sm text-gray-600">Type: ${isWatergate ? 'Watergate' : 'Village'}</p>
             <p class="text-sm text-gray-600">Flood Risk: ${location.weather.floodRisk}%</p>
             <p class="text-sm text-gray-600">Temperature: ${location.weather.temperature}°C</p>
             <p class="text-sm text-gray-600">${location.weather.description}</p>
@@ -162,7 +186,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       {/* Legend with updated colors */}
       <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-rich_black-400/95 backdrop-blur-sm rounded-lg p-4 border border-paynes_gray-300 dark:border-paynes_gray-500 z-10">
         <h4 className="text-paynes_gray-700 dark:text-mint_cream-500 font-medium mb-3">Flood Risk Level</h4>
-        <div className="space-y-2">
+        <div className="space-y-2 mb-4">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
             <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">High Risk (80%+)</span>
@@ -178,6 +202,18 @@ export const FloodMap: React.FC<FloodMapProps> = ({
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
             <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Minimal Risk (0-39%)</span>
+          </div>
+        </div>
+        
+        <h4 className="text-paynes_gray-700 dark:text-mint_cream-500 font-medium mb-3">Location Types</h4>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 border-2 border-white rounded-full transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Watergates</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Villages</span>
           </div>
         </div>
       </div>
