@@ -6,6 +6,7 @@ export interface WeatherData {
   precipitation: number;
   description: string;
   floodRisk: number; // 0-100 percentage
+  weatherCode?: number; // WMO weather code
 }
 
 export interface LocationData {

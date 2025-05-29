@@ -2,6 +2,7 @@
 import React from 'react';
 import { MapPin, Thermometer, Droplets, Wind, AlertTriangle } from 'lucide-react';
 import { LocationData } from '../types/weather';
+import { WeatherIcon } from './WeatherIcon';
 
 interface WeatherCardProps {
   location: LocationData;
@@ -31,21 +32,30 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   return (
     <div
       onClick={onSelect}
-      className={`bg-gray-700 rounded-lg p-4 cursor-pointer transition-all duration-200 border ${
+      className={`bg-paynes_gray-400 rounded-lg p-4 cursor-pointer transition-all duration-200 border dark:bg-rich_black-400 ${
         isSelected
-          ? 'border-blue-500 bg-gray-600'
-          : 'border-gray-600 hover:border-gray-500 hover:bg-gray-650'
+          ? 'border-sky_blue-500 bg-paynes_gray-300 dark:bg-rich_black-300'
+          : 'border-paynes_gray-300 hover:border-paynes_gray-200 hover:bg-paynes_gray-350 dark:border-rich_black-300 dark:hover:border-rich_black-200'
       }`}
     >
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="flex items-center space-x-2 mb-1">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <h3 className="text-white font-medium">{location.name}</h3>
+        <div className="flex items-start space-x-3">
+          {location.weather && (
+            <WeatherIcon
+              weatherCode={location.weather.weatherCode || 0}
+              floodRisk={location.weather.floodRisk}
+              className="w-8 h-8 mt-1"
+            />
+          )}
+          <div>
+            <div className="flex items-center space-x-2 mb-1">
+              <MapPin className="w-4 h-4 text-beige-400" />
+              <h3 className="text-mint_cream-500 font-medium">{location.name}</h3>
+            </div>
+            <p className="text-beige-400 text-sm">
+              {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}
+            </p>
           </div>
-          <p className="text-gray-400 text-sm">
-            {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}
-          </p>
         </div>
         {location.weather && (
           <div className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(location.weather.floodRisk)}`}>
@@ -58,34 +68,34 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         <div className="space-y-2">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Thermometer className="w-4 h-4 text-blue-400" />
-              <span className="text-gray-300 text-sm">{location.weather.temperature}°C</span>
+              <Thermometer className="w-4 h-4 text-sky_blue-500" />
+              <span className="text-mint_cream-400 text-sm">{location.weather.temperature}°C</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Droplets className="w-4 h-4 text-blue-400" />
-              <span className="text-gray-300 text-sm">{location.weather.humidity}%</span>
+              <Droplets className="w-4 h-4 text-sky_blue-500" />
+              <span className="text-mint_cream-400 text-sm">{location.weather.humidity}%</span>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Wind className="w-4 h-4 text-blue-400" />
-              <span className="text-gray-300 text-sm">{location.weather.windSpeed} km/h</span>
+              <Wind className="w-4 h-4 text-sky_blue-500" />
+              <span className="text-mint_cream-400 text-sm">{location.weather.windSpeed} km/h</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Droplets className="w-4 h-4 text-blue-400" />
-              <span className="text-gray-300 text-sm">{location.weather.precipitation}mm</span>
+              <Droplets className="w-4 h-4 text-sky_blue-500" />
+              <span className="text-mint_cream-400 text-sm">{location.weather.precipitation}mm</span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-gray-600">
-            <p className="text-gray-300 text-sm">
-              <span className="text-gray-400">Weather:</span> {location.weather.description}
+          <div className="pt-2 border-t border-paynes_gray-300 dark:border-rich_black-300">
+            <p className="text-mint_cream-400 text-sm">
+              <span className="text-beige-400">Weather:</span> {location.weather.description}
             </p>
           </div>
         </div>
       ) : (
-        <div className="flex items-center space-x-2 text-gray-400">
+        <div className="flex items-center space-x-2 text-beige-400">
           <AlertTriangle className="w-4 h-4" />
           <span className="text-sm">Weather data unavailable</span>
         </div>

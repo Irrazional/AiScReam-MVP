@@ -59,45 +59,79 @@ const calculateFloodRisk = (weatherData: {
   return Math.min(100, Math.max(0, risk));
 };
 
-export const fetchWeatherData = async (latitude: number, longitude: number): Promise<WeatherData> => {
+export const fetchWeatherData = async (
+  latitude: number, 
+  longitude: number, 
+  dateTime?: Date
+): Promise<WeatherData> => {
   try {
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FJakarta`
-    );
+    const isHistorical = dateTime && dateTime < new Date();
+    let url: string;
+
+    if (isHistorical) {
+      // Format date for historical API (YYYY-MM-DD)
+      const date = dateTime.toISOString().split('T')[0];
+      url = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${date}&end_date=${date}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FJakarta`;
+    } else {
+      // Current weather API
+      url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FJakarta`;
+    }
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Weather API request failed: ${response.status}`);
     }
 
-    const data: OpenMeteoResponse = await response.json();
+    const data = await response.json();
+
+    let weatherData;
+    if (isHistorical && data.hourly) {
+      // For historical data, find the closest hour
+      const targetHour = dateTime!.getHours();
+      const hourIndex = targetHour; // Assuming we get 24 hours of data
+      
+      weatherData = {
+        temperature_2m: data.hourly.temperature_2m[hourIndex] || data.hourly.temperature_2m[0],
+        relative_humidity_2m: data.hourly.relative_humidity_2m[hourIndex] || data.hourly.relative_humidity_2m[0],
+        wind_speed_10m: data.hourly.wind_speed_10m[hourIndex] || data.hourly.wind_speed_10m[0],
+        precipitation: data.hourly.precipitation[hourIndex] || data.hourly.precipitation[0],
+        weather_code: data.hourly.weather_code[hourIndex] || data.hourly.weather_code[0],
+      };
+    } else {
+      weatherData = data.current;
+    }
 
     const floodRisk = calculateFloodRisk({
-      precipitation: data.current.precipitation,
-      humidity: data.current.relative_humidity_2m,
-      windSpeed: data.current.wind_speed_10m,
-      weatherCode: data.current.weather_code,
+      precipitation: weatherData.precipitation,
+      humidity: weatherData.relative_humidity_2m,
+      windSpeed: weatherData.wind_speed_10m,
+      weatherCode: weatherData.weather_code,
     });
 
     return {
-      temperature: Math.round(data.current.temperature_2m),
-      humidity: data.current.relative_humidity_2m,
-      windSpeed: Math.round(data.current.wind_speed_10m),
-      precipitation: data.current.precipitation,
-      description: getWeatherDescription(data.current.weather_code),
+      temperature: Math.round(weatherData.temperature_2m),
+      humidity: weatherData.relative_humidity_2m,
+      windSpeed: Math.round(weatherData.wind_speed_10m),
+      precipitation: weatherData.precipitation,
+      description: getWeatherDescription(weatherData.weather_code),
       floodRisk,
+      weatherCode: weatherData.weather_code,
     };
   } catch (error) {
     console.error('Error fetching weather data:', error);
     
     // Return mock data with some randomization for demonstration
     const mockRisk = Math.floor(Math.random() * 100);
+    const mockWeatherCode = [0, 1, 2, 3, 61, 63, 95][Math.floor(Math.random() * 7)];
     return {
       temperature: 25 + Math.floor(Math.random() * 10),
       humidity: 60 + Math.floor(Math.random() * 30),
       windSpeed: 5 + Math.floor(Math.random() * 15),
       precipitation: Math.random() * 10,
-      description: 'Clouds (scattered clouds)',
+      description: getWeatherDescription(mockWeatherCode),
       floodRisk: mockRisk,
+      weatherCode: mockWeatherCode,
     };
   }
 };

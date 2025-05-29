@@ -3,25 +3,27 @@ import React, { useState, useEffect } from 'react';
 import { WeatherSidebar } from '../components/WeatherSidebar';
 import { FloodMap } from '../components/FloodMap';
 import { Header } from '../components/Header';
+import { ThemeProvider } from '../components/ThemeProvider';
 import { LocationData, WeatherData } from '../types/weather';
 import { fetchWeatherData } from '../services/weatherService';
 
-const Index = () => {
+const IndexContent = () => {
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'name' | 'risk' | 'temperature'>('name');
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
 
   // Sample Jakarta area locations (you can expand this)
   const jakartaLocations = [
-    { name: 'Kapukmuara', coordinates: [-6.125, 106.7671] },
-    { name: 'Warakas', coordinates: [-6.1226, 106.8778] },
-    { name: 'Pegangsaandua', coordinates: [-6.1616, 106.9139] },
-    { name: 'Ancol', coordinates: [-6.1235, 106.8364] },
-    { name: 'Sungaibaranging', coordinates: [-6.1369, 106.8653] },
-    { name: 'Pademangan Timur', coordinates: [-6.1419, 106.848] },
-    { name: 'Kelapagading Barat', coordinates: [-6.1552, 106.8968] },
-    { name: 'Sungaibambu', coordinates: [-6.1295, 106.8845] },
+    { name: 'Kapukmuara', coordinates: [-6.125, 106.7671] as [number, number] },
+    { name: 'Warakas', coordinates: [-6.1226, 106.8778] as [number, number] },
+    { name: 'Pegangsaandua', coordinates: [-6.1616, 106.9139] as [number, number] },
+    { name: 'Ancol', coordinates: [-6.1235, 106.8364] as [number, number] },
+    { name: 'Sungaibaranging', coordinates: [-6.1369, 106.8653] as [number, number] },
+    { name: 'Pademangan Timur', coordinates: [-6.1419, 106.848] as [number, number] },
+    { name: 'Kelapagading Barat', coordinates: [-6.1552, 106.8968] as [number, number] },
+    { name: 'Sungaibambu', coordinates: [-6.1295, 106.8845] as [number, number] },
   ];
 
   useEffect(() => {
@@ -29,7 +31,11 @@ const Index = () => {
       setLoading(true);
       try {
         const weatherPromises = jakartaLocations.map(async (location) => {
-          const weather = await fetchWeatherData(location.coordinates[0], location.coordinates[1]);
+          const weather = await fetchWeatherData(
+            location.coordinates[0], 
+            location.coordinates[1], 
+            selectedDateTime
+          );
           return {
             ...location,
             weather,
@@ -47,10 +53,7 @@ const Index = () => {
     };
 
     loadWeatherData();
-    // Refresh data every 10 minutes
-    const interval = setInterval(loadWeatherData, 600000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [selectedDateTime]);
 
   const sortedLocations = [...locations].sort((a, b) => {
     switch (sortBy) {
@@ -64,8 +67,11 @@ const Index = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Header />
+    <div className="min-h-screen bg-beige-500 text-mint_cream-500 dark:bg-rich_black-500 dark:text-mint_cream-500">
+      <Header 
+        selectedDateTime={selectedDateTime}
+        onDateTimeChange={setSelectedDateTime}
+      />
       <div className="flex h-[calc(100vh-64px)]">
         <WeatherSidebar
           locations={sortedLocations}
@@ -84,6 +90,14 @@ const Index = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <ThemeProvider>
+      <IndexContent />
+    </ThemeProvider>
   );
 };
 
