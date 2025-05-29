@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -28,18 +27,18 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   };
 
   const createWatergateIcon = (color: string, isSelected: boolean = false) => {
-    const size = isSelected ? 24 : 18;
+    const size = isSelected ? 28 : 22;
     return L.divIcon({
       className: 'custom-watergate-marker',
       html: `<div style="
         width: ${size}px; 
         height: ${size}px; 
         background-color: ${color}; 
-        border: 3px solid white; 
+        border: 3px solid #2563eb; 
         border-radius: 50% 50% 50% 0%;
         transform: rotate(-45deg);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        ${isSelected ? 'transform: rotate(-45deg) scale(1.2);' : ''}
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        ${isSelected ? 'transform: rotate(-45deg) scale(1.2); border-width: 4px;' : ''}
       "></div>`,
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
@@ -47,17 +46,17 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   };
 
   const createVillageIcon = (color: string, isSelected: boolean = false) => {
-    const size = isSelected ? 20 : 15;
+    const size = isSelected ? 24 : 18;
     return L.divIcon({
       className: 'custom-village-marker',
       html: `<div style="
         width: ${size}px; 
         height: ${size}px; 
         background-color: ${color}; 
-        border: 2px solid white; 
-        border-radius: 50%; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        ${isSelected ? 'transform: scale(1.2);' : ''}
+        border: 3px solid #059669; 
+        border-radius: 4px; 
+        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        ${isSelected ? 'transform: scale(1.2); border-width: 4px;' : ''}
       "></div>`,
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
@@ -144,19 +143,19 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   if (!mapTilerKey) {
     return (
       <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
-        <div className="text-center p-8 bg-gray-900/90 backdrop-blur-sm rounded-lg border border-gray-700 max-w-md">
-          <h3 className="text-white font-medium mb-4">MapTiler API Key Required</h3>
-          <p className="text-gray-300 text-sm mb-4">
+        <div className="text-center p-8 bg-white rounded-xl shadow-xl max-w-md">
+          <h3 className="text-gray-900 font-semibold mb-4">MapTiler API Key Required</h3>
+          <p className="text-gray-600 text-sm mb-4">
             Please enter your MapTiler API key to display the interactive map.
             You can get one for free at{' '}
-            <a href="https://www.maptiler.com/" target="_blank" rel="noopener noreferrer" className="text-sky_blue-500 hover:underline">
+            <a href="https://www.maptiler.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
               maptiler.com
             </a>
           </p>
           <input
             type="text"
             placeholder="Enter MapTiler API Key"
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm mb-3"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 setMapTilerKey((e.target as HTMLInputElement).value);
@@ -170,7 +169,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
                 setMapTilerKey(input.value);
               }
             }}
-            className="w-full bg-sky_blue-500 hover:bg-sky_blue-600 text-white py-2 px-4 rounded text-sm transition-colors"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             Load Map
           </button>
@@ -183,37 +182,37 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
       
-      {/* Legend with updated colors */}
-      <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-rich_black-400/95 backdrop-blur-sm rounded-lg p-4 border border-paynes_gray-300 dark:border-paynes_gray-500 z-10">
-        <h4 className="text-paynes_gray-700 dark:text-mint_cream-500 font-medium mb-3">Flood Risk Level</h4>
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">High Risk (80%+)</span>
+      {/* Updated Legend */}
+      <div className="absolute bottom-6 left-6 bg-white rounded-xl p-5 shadow-lg border border-gray-200 z-10">
+        <h4 className="text-gray-900 font-semibold mb-4">Flood Risk Level</h4>
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+            <span className="text-gray-700 text-sm">High Risk (80%+)</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Moderate Risk (60-79%)</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+            <span className="text-gray-700 text-sm">Moderate Risk (60-79%)</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Low Risk (40-59%)</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+            <span className="text-gray-700 text-sm">Low Risk (40-59%)</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Minimal Risk (0-39%)</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+            <span className="text-gray-700 text-sm">Minimal Risk (0-39%)</span>
           </div>
         </div>
         
-        <h4 className="text-paynes_gray-700 dark:text-mint_cream-500 font-medium mb-3">Location Types</h4>
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-blue-500 border-2 border-white rounded-full transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Watergates</span>
+        <h4 className="text-gray-900 font-semibold mb-4">Location Types</h4>
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
+            <span className="text-gray-700 text-sm">Watergates</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
-            <span className="text-paynes_gray-600 dark:text-mint_cream-400 text-sm">Villages</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
+            <span className="text-gray-700 text-sm">Villages</span>
           </div>
         </div>
       </div>
