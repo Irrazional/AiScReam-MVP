@@ -1,9 +1,18 @@
 
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LocationData } from '../types/weather';
 import { WeatherCard } from './WeatherCard';
 import { LocationFilter, FilterOptions } from './LocationFilter';
+import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface WeatherSidebarProps {
   locations: LocationData[];
@@ -26,6 +35,8 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   filters,
   onFilterChange,
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const filteredLocations = locations.filter(location => {
     if (location.type === 'watergate') {
       return filters.showWatergates;
@@ -34,32 +45,85 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
     }
   });
 
-  return (
-    <div className="w-96 bg-gray-50 border-r border-gray-200 overflow-hidden flex flex-col">
-      <div className="p-6 border-b border-gray-200 bg-white">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Weather Report</h2>
-        <p className="text-gray-600 text-sm mb-6">Jakarta Utara</p>
-        
-        <div className="relative mb-6">
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as 'name' | 'risk' | 'temperature')}
-            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="risk">Sort by Flood Risk</option>
-            <option value="temperature">Sort by Temperature</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
+  const getSortLabel = (sortType: string) => {
+    switch (sortType) {
+      case 'name': return 'Sort by Name';
+      case 'risk': return 'Sort by Flood Risk';
+      case 'temperature': return 'Sort by Temperature';
+      default: return 'Sort by Name';
+    }
+  };
 
-        <LocationFilter 
-          filters={filters}
-          onFilterChange={onFilterChange}
-        />
+  if (isCollapsed) {
+    return (
+      <div className="w-12 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(false)}
+            className="w-6 h-6"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-96 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Weather Report</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Jakarta Utara</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(true)}
+            className="w-8 h-8"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        <div className="mb-6">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                <div className="flex items-center space-x-2">
+                  <Settings className="w-4 h-4" />
+                  <span>Filter & Sort</span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuLabel>Sort Options</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onSortChange('name')}>
+                Sort by Name
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('risk')}>
+                Sort by Flood Risk
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortChange('temperature')}>
+                Sort by Temperature
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Filters</DropdownMenuLabel>
+              <div className="p-2">
+                <LocationFilter 
+                  filters={filters}
+                  onFilterChange={onFilterChange}
+                />
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

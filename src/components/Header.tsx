@@ -14,14 +14,14 @@ export const Header: React.FC<HeaderProps> = ({ selectedDateTime, onDateTimeChan
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="bg-paynes_gray-500 border-b border-paynes_gray-400 px-6 py-4 dark:bg-rich_black-500 dark:border-rich_black-300">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Cloud className="w-8 h-8 text-sky_blue-500" />
-            <h1 className="text-2xl font-bold text-mint_cream-500">FloodReport</h1>
+            <Cloud className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FloodReport</h1>
           </div>
-          <span className="text-sm text-beige-400">Dashboard</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Dashboard</span>
         </div>
         
         <div className="flex items-center space-x-4">
@@ -29,12 +29,12 @@ export const Header: React.FC<HeaderProps> = ({ selectedDateTime, onDateTimeChan
             selectedDateTime={selectedDateTime}
             onDateTimeChange={onDateTimeChange}
           />
-          <div className="text-sm text-beige-400">Event date</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Event date</div>
           <Button
             variant="outline"
             size="icon"
             onClick={toggleTheme}
-            className="bg-transparent border-paynes_gray-400 text-mint_cream-500 hover:bg-paynes_gray-400 dark:border-rich_black-300 dark:hover:bg-rich_black-400"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
