@@ -76,7 +76,7 @@ const IndexContent = () => {
   });
 
   return (
-    <div className="min-h-screen bg-mint_cream-500 text-paynes_gray-700 dark:bg-rich_black-500 dark:text-mint_cream-500">
+    <div className="min-h-screen bg-background text-foreground">
       <Header 
         selectedDateTime={selectedDateTime}
         onDateTimeChange={setSelectedDateTime}

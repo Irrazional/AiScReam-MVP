@@ -29,13 +29,19 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
     return 'Minimal Risk';
   };
 
+  const isWatergate = location.type === 'watergate';
+
   return (
     <div
       onClick={onSelect}
-      className={`bg-paynes_gray-400 rounded-lg p-4 cursor-pointer transition-all duration-200 border dark:bg-rich_black-400 ${
+      className={`bg-card rounded-lg p-4 cursor-pointer transition-all duration-200 border-2 ${
+        isWatergate 
+          ? 'border-naples_yellow-400' 
+          : 'border-sage-300'
+      } ${
         isSelected
-          ? 'border-sky_blue-500 bg-paynes_gray-300 dark:bg-rich_black-300'
-          : 'border-paynes_gray-300 hover:border-paynes_gray-200 hover:bg-paynes_gray-350 dark:border-rich_black-300 dark:hover:border-rich_black-200'
+          ? 'border-naples_yellow-500 bg-accent/10'
+          : 'hover:border-naples_yellow-300 hover:bg-accent/5'
       }`}
     >
       <div className="flex items-start justify-between mb-3">
@@ -49,10 +55,15 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           )}
           <div>
             <div className="flex items-center space-x-2 mb-1">
-              <MapPin className="w-4 h-4 text-beige-400" />
-              <h3 className="text-mint_cream-500 font-medium">{location.name}</h3>
+              <MapPin className="w-4 h-4 text-naples_yellow-500" />
+              <h3 className="text-foreground font-medium">{location.name}</h3>
+              {isWatergate && (
+                <span className="px-2 py-1 bg-naples_yellow-100 text-naples_yellow-700 text-xs rounded-full font-medium">
+                  Watergate
+                </span>
+              )}
             </div>
-            <p className="text-beige-400 text-sm">
+            <p className="text-muted-foreground text-sm">
               {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}
             </p>
           </div>
@@ -68,34 +79,34 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         <div className="space-y-2">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Thermometer className="w-4 h-4 text-sky_blue-500" />
-              <span className="text-mint_cream-400 text-sm">{location.weather.temperature}°C</span>
+              <Thermometer className="w-4 h-4 text-naples_yellow-500" />
+              <span className="text-foreground text-sm">{location.weather.temperature}°C</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Droplets className="w-4 h-4 text-sky_blue-500" />
-              <span className="text-mint_cream-400 text-sm">{location.weather.humidity}%</span>
+              <Droplets className="w-4 h-4 text-naples_yellow-500" />
+              <span className="text-foreground text-sm">{location.weather.humidity}%</span>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Wind className="w-4 h-4 text-sky_blue-500" />
-              <span className="text-mint_cream-400 text-sm">{location.weather.windSpeed} km/h</span>
+              <Wind className="w-4 h-4 text-naples_yellow-500" />
+              <span className="text-foreground text-sm">{location.weather.windSpeed} km/h</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Droplets className="w-4 h-4 text-sky_blue-500" />
-              <span className="text-mint_cream-400 text-sm">{location.weather.precipitation}mm</span>
+              <Droplets className="w-4 h-4 text-naples_yellow-500" />
+              <span className="text-foreground text-sm">{location.weather.precipitation}mm</span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-paynes_gray-300 dark:border-rich_black-300">
-            <p className="text-mint_cream-400 text-sm">
-              <span className="text-beige-400">Weather:</span> {location.weather.description}
+          <div className="pt-2 border-t border-border">
+            <p className="text-foreground text-sm">
+              <span className="text-muted-foreground">Weather:</span> {location.weather.description}
             </p>
           </div>
         </div>
       ) : (
-        <div className="flex items-center space-x-2 text-beige-400">
+        <div className="flex items-center space-x-2 text-muted-foreground">
           <AlertTriangle className="w-4 h-4" />
           <span className="text-sm">Weather data unavailable</span>
         </div>
