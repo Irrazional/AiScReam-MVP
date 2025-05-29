@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { LocationData } from '../types/weather';
 import { WeatherCard } from './WeatherCard';
-import { LocationFilter } from './LocationFilter';
 
 interface WeatherSidebarProps {
   locations: LocationData[];
@@ -22,63 +21,33 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   onLocationSelect,
   selectedLocation,
 }) => {
-  const [showWatergates, setShowWatergates] = useState(true);
-  const [showVillages, setShowVillages] = useState(true);
-
-  // Filter locations based on checkboxes
-  const filteredLocations = locations.filter(location => {
-    if (location.type === 'watergate' && !showWatergates) return false;
-    if (location.type === 'village' && !showVillages) return false;
-    return true;
-  });
-
-  const sortedLocations = [...filteredLocations].sort((a, b) => {
-    switch (sortBy) {
-      case 'risk':
-        return (b.weather?.floodRisk || 0) - (a.weather?.floodRisk || 0);
-      case 'temperature':
-        return (b.weather?.temperature || 0) - (a.weather?.temperature || 0);
-      default:
-        return a.name.localeCompare(b.name);
-    }
-  });
-
   return (
-    <div className="w-96 bg-background border-r border-border overflow-hidden flex flex-col">
-      <div className="p-6 border-b border-border">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Weather Report</h2>
-        <p className="text-muted-foreground text-sm mb-4">Jakarta Utara</p>
+    <div className="w-96 bg-paynes_gray-500 border-r border-paynes_gray-400 overflow-hidden flex flex-col dark:bg-rich_black-500 dark:border-rich_black-300">
+      <div className="p-6 border-b border-paynes_gray-400 dark:border-rich_black-300">
+        <h2 className="text-xl font-semibold text-mint_cream-500 mb-4">Weather Report</h2>
+        <p className="text-beige-400 text-sm mb-4">Jakarta Utara</p>
         
-        <div className="space-y-4">
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => onSortChange(e.target.value as 'name' | 'risk' | 'temperature')}
-              className="w-full bg-background border border-border rounded-lg px-4 py-2 text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-naples_yellow-500"
-            >
-              <option value="name">Sort by Name</option>
-              <option value="risk">Sort by Flood Risk</option>
-              <option value="temperature">Sort by Temperature</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
-          </div>
-
-          <LocationFilter
-            showWatergates={showWatergates}
-            showVillages={showVillages}
-            onWatergateToggle={setShowWatergates}
-            onVillageToggle={setShowVillages}
-          />
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => onSortChange(e.target.value as 'name' | 'risk' | 'temperature')}
+            className="w-full bg-paynes_gray-400 border border-paynes_gray-300 rounded-lg px-4 py-2 text-mint_cream-500 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky_blue-500 dark:bg-rich_black-400 dark:border-rich_black-300"
+          >
+            <option value="name">Sort by Name</option>
+            <option value="risk">Sort by Flood Risk</option>
+            <option value="temperature">Sort by Temperature</option>
+          </select>
+          <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-beige-400 pointer-events-none" />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-naples_yellow-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky_blue-500"></div>
           </div>
         ) : (
-          sortedLocations.map((location) => (
+          locations.map((location) => (
             <WeatherCard
               key={location.id}
               location={location}
