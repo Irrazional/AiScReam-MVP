@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { WeatherSidebar } from '../components/WeatherSidebar';
 import { FloodMap } from '../components/FloodMap';
+import { RadarMap } from '../components/RadarMap';
 import { Header } from '../components/Header';
+import { ViewToggle } from '../components/ViewToggle';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { LocationData, WeatherData } from '../types/weather';
 import { fetchWeatherData } from '../services/weatherService';
@@ -15,6 +17,7 @@ const IndexContent = () => {
   const [sortBy, setSortBy] = useState<'name' | 'risk' | 'temperature'>('name');
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
+  const [currentView, setCurrentView] = useState<'basic' | 'advanced'>('basic');
   const [filters, setFilters] = useState<FilterOptions>({
     showWatergates: true,
     showVillages: true,
@@ -29,7 +32,6 @@ const IndexContent = () => {
     { name: 'Pulo Gadung', coordinates: [-6.109, 106.906417] as [number, number], type: 'watergate' },
   ];
 
-  // Combine watergates with Jakarta Utara villages
   const allLocations = [
     ...watergateLocations,
     ...jakartaUtaraVillages.map(village => ({
@@ -91,11 +93,19 @@ const IndexContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <Header 
-        selectedDateTime={selectedDateTime}
-        onDateTimeChange={setSelectedDateTime}
-      />
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <Header 
+            selectedDateTime={selectedDateTime}
+            onDateTimeChange={setSelectedDateTime}
+          />
+          <ViewToggle
+            currentView={currentView}
+            onViewChange={setCurrentView}
+          />
+        </div>
+      </div>
+      <div className="flex h-[calc(100vh-80px)]">
         <WeatherSidebar
           locations={sortedLocations}
           loading={loading}
@@ -107,11 +117,19 @@ const IndexContent = () => {
           onFilterChange={setFilters}
         />
         <div className="flex-1">
-          <FloodMap
-            locations={filteredMapLocations}
-            selectedLocation={selectedLocation}
-            onLocationSelect={setSelectedLocation}
-          />
+          {currentView === 'basic' ? (
+            <FloodMap
+              locations={filteredMapLocations}
+              selectedLocation={selectedLocation}
+              onLocationSelect={setSelectedLocation}
+            />
+          ) : (
+            <RadarMap
+              locations={filteredMapLocations}
+              selectedLocation={selectedLocation}
+              onLocationSelect={setSelectedLocation}
+            />
+          )}
         </div>
       </div>
     </div>

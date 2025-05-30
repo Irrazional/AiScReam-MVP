@@ -4,13 +4,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LocationData } from '../types/weather';
 
-interface FloodMapProps {
+interface RadarMapProps {
   locations: LocationData[];
   selectedLocation: LocationData | null;
   onLocationSelect: (location: LocationData | null) => void;
 }
 
-export const FloodMap: React.FC<FloodMapProps> = ({
+export const RadarMap: React.FC<RadarMapProps> = ({
   locations,
   selectedLocation,
   onLocationSelect,
@@ -18,13 +18,15 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
-  const [mapTilerKey, setMapTilerKey] = useState<string>('jNtUhxpPD0rde9ksHxlf');
+  const weatherLayersRef = useRef<L.TileLayer[]>([]);
+  const [openWeatherKey, setOpenWeatherKey] = useState<string>('');
+  const [activeLayer, setActiveLayer] = useState<'precipitation' | 'wind' | 'clouds'>('precipitation');
 
   const getRiskColor = (risk: number) => {
-    if (risk >= 80) return '#ef4444'; // red
-    if (risk >= 60) return '#f97316'; // orange
-    if (risk >= 40) return '#eab308'; // yellow
-    return '#22c55e'; // green
+    if (risk >= 80) return '#ef4444';
+    if (risk >= 60) return '#f97316';
+    if (risk >= 40) return '#eab308';
+    return '#22c55e';
   };
 
   const createWatergateIcon = (color: string, isSelected: boolean = false) => {
@@ -64,13 +66,47 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     });
   };
 
+  const addWeatherLayer = (layerType: 'precipitation' | 'wind' | 'clouds') => {
+    if (!mapInstanceRef.current || !openWeatherKey) return;
+
+    // Remove existing weather layers
+    weatherLayersRef.current.forEach(layer => {
+      mapInstanceRef.current?.removeLayer(layer);
+    });
+    weatherLayersRef.current = [];
+
+    let layerName = '';
+    switch (layerType) {
+      case 'precipitation':
+        layerName = 'precipitation_new';
+        break;
+      case 'wind':
+        layerName = 'wind_new';
+        break;
+      case 'clouds':
+        layerName = 'clouds_new';
+        break;
+    }
+
+    const weatherLayer = L.tileLayer(
+      `https://tile.openweathermap.org/map/${layerName}/{z}/{x}/{y}.png?appid=${openWeatherKey}`,
+      {
+        maxZoom: 16,
+        opacity: 0.6,
+        attribution: '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
+      }
+    );
+
+    weatherLayer.addTo(mapInstanceRef.current);
+    weatherLayersRef.current.push(weatherLayer);
+  };
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize the map centered on Jakarta with restricted bounds
     const jakartaBounds = L.latLngBounds(
-      L.latLng(-6.4, 106.6), // Southwest coordinates
-      L.latLng(-5.9, 107.1)  // Northeast coordinates
+      L.latLng(-6.4, 106.6),
+      L.latLng(-5.9, 107.1)
     );
 
     const map = L.map(mapRef.current, {
@@ -80,13 +116,12 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       maxZoom: 16
     }).setView([-6.2, 106.85], 11);
 
-    // Use the new MapTiler topo style
-    L.tileLayer(`https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
-      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Base layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 16,
     }).addTo(map);
 
-    // Set the map container z-index lower than popover
     if (mapRef.current) {
       mapRef.current.style.zIndex = '1';
     }
@@ -99,7 +134,13 @@ export const FloodMap: React.FC<FloodMapProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [mapTilerKey]);
+  }, []);
+
+  useEffect(() => {
+    if (openWeatherKey) {
+      addWeatherLayer(activeLayer);
+    }
+  }, [openWeatherKey, activeLayer]);
 
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -141,38 +182,38 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     });
   }, [locations, selectedLocation, onLocationSelect]);
 
-  if (!mapTilerKey) {
+  if (!openWeatherKey) {
     return (
       <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-xl max-w-md">
-          <h3 className="text-gray-900 font-semibold mb-4">MapTiler API Key Required</h3>
+          <h3 className="text-gray-900 font-semibold mb-4">OpenWeatherMap API Key Required</h3>
           <p className="text-gray-600 text-sm mb-4">
-            Please enter your MapTiler API key to display the interactive map.
+            Please enter your OpenWeatherMap API key to display the radar map.
             You can get one for free at{' '}
-            <a href="https://www.maptiler.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-              maptiler.com
+            <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              openweathermap.org
             </a>
           </p>
           <input
             type="text"
-            placeholder="Enter MapTiler API Key"
+            placeholder="Enter OpenWeatherMap API Key"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
-                setMapTilerKey((e.target as HTMLInputElement).value);
+                setOpenWeatherKey((e.target as HTMLInputElement).value);
               }
             }}
           />
           <button
             onClick={() => {
-              const input = document.querySelector('input[placeholder="Enter MapTiler API Key"]') as HTMLInputElement;
+              const input = document.querySelector('input[placeholder="Enter OpenWeatherMap API Key"]') as HTMLInputElement;
               if (input?.value) {
-                setMapTilerKey(input.value);
+                setOpenWeatherKey(input.value);
               }
             }}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           >
-            Load Map
+            Load Radar Map
           </button>
         </div>
       </div>
@@ -183,7 +224,44 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
       
-      {/* Updated Legend with Indonesian terms */}
+      {/* Layer Control */}
+      <div className="absolute top-6 right-6 bg-white rounded-xl p-4 shadow-lg border border-gray-200 z-10">
+        <h4 className="text-gray-900 font-semibold mb-3">Layer Cuaca</h4>
+        <div className="space-y-2">
+          <button
+            onClick={() => setActiveLayer('precipitation')}
+            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeLayer === 'precipitation'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Curah Hujan
+          </button>
+          <button
+            onClick={() => setActiveLayer('wind')}
+            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeLayer === 'wind'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Angin
+          </button>
+          <button
+            onClick={() => setActiveLayer('clouds')}
+            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeLayer === 'clouds'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Awan
+          </button>
+        </div>
+      </div>
+
+      {/* Legend */}
       <div className="absolute bottom-6 left-6 bg-white rounded-xl p-5 shadow-lg border border-gray-200 z-10">
         <h4 className="text-gray-900 font-semibold mb-4">Tingkat Risiko Banjir</h4>
         <div className="space-y-3 mb-6">
