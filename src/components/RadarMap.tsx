@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,8 +18,11 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const weatherLayersRef = useRef<L.TileLayer[]>([]);
-  const [openWeatherKey, setOpenWeatherKey] = useState<string>('');
+  const [openWeatherKey, setOpenWeatherKey] = useState<string>(() => {
+    return localStorage.getItem('openweather-api-key') || '';
+  });
   const [activeLayer, setActiveLayer] = useState<'precipitation' | 'wind' | 'clouds'>('precipitation');
+  const [isLoading, setIsLoading] = useState(false);
 
   const getRiskColor = (risk: number) => {
     if (risk >= 80) return '#ef4444';
@@ -69,6 +71,9 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const addWeatherLayer = (layerType: 'precipitation' | 'wind' | 'clouds') => {
     if (!mapInstanceRef.current || !openWeatherKey) return;
 
+    console.log('Adding weather layer:', layerType, 'with API key:', openWeatherKey.substring(0, 8) + '...');
+    setIsLoading(true);
+
     // Remove existing weather layers
     weatherLayersRef.current.forEach(layer => {
       mapInstanceRef.current?.removeLayer(layer);
@@ -97,8 +102,31 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       }
     );
 
+    weatherLayer.on('loading', () => {
+      console.log('Weather layer loading...');
+    });
+
+    weatherLayer.on('load', () => {
+      console.log('Weather layer loaded successfully');
+      setIsLoading(false);
+    });
+
+    weatherLayer.on('tileerror', (e) => {
+      console.error('Weather layer tile error:', e);
+      setIsLoading(false);
+    });
+
     weatherLayer.addTo(mapInstanceRef.current);
     weatherLayersRef.current.push(weatherLayer);
+
+    // Set loading to false after a timeout as backup
+    setTimeout(() => setIsLoading(false), 3000);
+  };
+
+  const handleApiKeySubmit = (key: string) => {
+    console.log('Setting API key:', key.substring(0, 8) + '...');
+    setOpenWeatherKey(key);
+    localStorage.setItem('openweather-api-key', key);
   };
 
   useEffect(() => {
@@ -138,6 +166,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
   useEffect(() => {
     if (openWeatherKey) {
+      console.log('API key available, adding weather layer...');
       addWeatherLayer(activeLayer);
     }
   }, [openWeatherKey, activeLayer]);
@@ -197,10 +226,11 @@ export const RadarMap: React.FC<RadarMapProps> = ({
           <input
             type="text"
             placeholder="Enter OpenWeatherMap API Key"
+            defaultValue="5ba2d8c0aa9c463b17bcd00fc60c7bed"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
-                setOpenWeatherKey((e.target as HTMLInputElement).value);
+                handleApiKeySubmit((e.target as HTMLInputElement).value);
               }
             }}
           />
@@ -208,7 +238,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             onClick={() => {
               const input = document.querySelector('input[placeholder="Enter OpenWeatherMap API Key"]') as HTMLInputElement;
               if (input?.value) {
-                setOpenWeatherKey(input.value);
+                handleApiKeySubmit(input.value);
               }
             }}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
@@ -223,6 +253,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-4 shadow-lg z-20">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <span className="text-gray-700">Loading weather data...</span>
+          </div>
+        </div>
+      )}
       
       {/* Layer Control */}
       <div className="absolute top-6 right-6 bg-white rounded-xl p-4 shadow-lg border border-gray-200 z-10">
@@ -257,6 +297,19 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             }`}
           >
             Awan
+          </button>
+        </div>
+        
+        {/* API Key management */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => {
+              localStorage.removeItem('openweather-api-key');
+              setOpenWeatherKey('');
+            }}
+            className="w-full text-xs text-gray-500 hover:text-gray-700 py-2"
+          >
+            Reset API Key
           </button>
         </div>
       </div>
