@@ -18,8 +18,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
 
-  // Calculate the maximum date (7 days from today)
-  const maxDate = addDays(new Date(), 7);
+  // Calculate the maximum date (3 days from today for future, unlimited for past)
+  const today = new Date();
+  const maxDate = addDays(today, 3);
+  const isFutureDate = selectedDateTime > today;
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -44,8 +46,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     return format(date, 'MM/dd/yyyy HH:mm') + ' GMT+7';
   };
 
-  // Generate 15-minute intervals (0, 15, 30, 45)
-  const minuteOptions = Array.from({ length: 4 }, (_, i) => i * 15);
+  // Generate minute options based on whether it's a future date
+  // Future dates: only hourly (0 minutes)
+  // Past/current dates: 15-minute intervals (0, 15, 30, 45)
+  const minuteOptions = isFutureDate ? [0] : Array.from({ length: 4 }, (_, i) => i * 15);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -53,11 +57,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         <Button
           variant="outline"
           className={cn(
-            "justify-start text-left font-normal bg-transparent border-paynes_gray-400 text-paynes_gray-600 hover:bg-paynes_gray-100 hover:text-paynes_gray-700",
-            "dark:bg-rich_black-500 dark:border-paynes_gray-300 dark:text-mint_cream-500 dark:hover:bg-rich_black-400"
+            "justify-start text-left font-normal border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
           )}
         >
-          <Calendar className="mr-2 h-4 w-4 text-paynes_gray-500" />
+          <Calendar className="mr-2 h-4 w-4 text-blue-500" />
           {formatDateTime(selectedDateTime)}
         </Button>
       </PopoverTrigger>
@@ -90,6 +93,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                 value={selectedDateTime.getMinutes()}
                 onChange={(e) => handleTimeChange('minutes', parseInt(e.target.value))}
                 className="bg-mint_cream-500 border border-paynes_gray-300 rounded px-2 py-1 text-paynes_gray-700 text-sm dark:bg-rich_black-300 dark:border-paynes_gray-200 dark:text-mint_cream-400"
+                disabled={isFutureDate && minuteOptions.length === 1}
               >
                 {minuteOptions.map((minutes) => (
                   <option key={minutes} value={minutes}>
@@ -99,6 +103,11 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               </select>
             </div>
           </div>
+          {isFutureDate && (
+            <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+              Future forecasts are limited to 3 days with hourly precision
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>
