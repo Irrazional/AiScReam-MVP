@@ -27,6 +27,23 @@ const getWeatherDescription = (weatherCode: number): string => {
   return weatherDescriptions[weatherCode] || 'Unknown';
 };
 
+const getOpenWeatherDescription = (weatherId: number, description: string): string => {
+  // Use OpenWeatherMap's description but fallback to our mapping if needed
+  return description || 'Unknown weather';
+};
+
+const mapOpenWeatherToWMO = (weatherId: number): number => {
+  // Map OpenWeatherMap weather IDs to WMO codes for consistency
+  if (weatherId >= 200 && weatherId < 300) return 95; // Thunderstorm
+  if (weatherId >= 300 && weatherId < 400) return 51; // Drizzle
+  if (weatherId >= 500 && weatherId < 600) return 61; // Rain
+  if (weatherId >= 600 && weatherId < 700) return 71; // Snow
+  if (weatherId >= 700 && weatherId < 800) return 45; // Fog/Mist
+  if (weatherId === 800) return 0; // Clear
+  if (weatherId > 800) return 2; // Clouds
+  return 0; // Default to clear
+};
+
 const calculateFloodRisk = (weatherData: {
   precipitation: number;
   humidity: number;
@@ -59,6 +76,47 @@ const calculateFloodRisk = (weatherData: {
   return Math.min(100, Math.max(0, risk));
 };
 
+const fetchFromOpenWeatherMap = async (latitude: number, longitude: number): Promise<WeatherData> => {
+  const apiKey = localStorage.getItem('openweather-api-key');
+  
+  if (!apiKey) {
+    throw new Error('OpenWeatherMap API key not found');
+  }
+
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+  
+  console.log('Fetching from OpenWeatherMap:', url.replace(apiKey, '***'));
+  
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`OpenWeatherMap API request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log('OpenWeatherMap response:', data);
+
+  const weatherCode = mapOpenWeatherToWMO(data.weather[0].id);
+  const precipitation = data.rain?.['1h'] || data.snow?.['1h'] || 0;
+
+  const floodRisk = calculateFloodRisk({
+    precipitation,
+    humidity: data.main.humidity,
+    windSpeed: data.wind.speed * 3.6, // Convert m/s to km/h
+    weatherCode,
+  });
+
+  return {
+    temperature: Math.round(data.main.temp),
+    humidity: data.main.humidity,
+    windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+    precipitation,
+    description: getOpenWeatherDescription(data.weather[0].id, data.weather[0].description),
+    floodRisk,
+    weatherCode,
+  };
+};
+
 export const fetchWeatherData = async (
   latitude: number, 
   longitude: number, 
@@ -66,6 +124,19 @@ export const fetchWeatherData = async (
 ): Promise<WeatherData> => {
   try {
     const now = new Date();
+    const isCurrentWeather = !dateTime || Math.abs(dateTime.getTime() - now.getTime()) < 3600000; // Within 1 hour
+
+    // Use OpenWeatherMap for current weather
+    if (isCurrentWeather) {
+      try {
+        return await fetchFromOpenWeatherMap(latitude, longitude);
+      } catch (error) {
+        console.warn('OpenWeatherMap failed, falling back to Open-Meteo:', error);
+        // Fall through to Open-Meteo fallback
+      }
+    }
+
+    // Use Open-Meteo for historical/future data or as fallback
     const isHistorical = dateTime && dateTime < now;
     const isFuture = dateTime && dateTime > now;
     let url: string;
