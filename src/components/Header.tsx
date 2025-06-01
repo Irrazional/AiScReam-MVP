@@ -26,21 +26,25 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <header className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 border-b border-blue-400 px-6 py-4 shadow-lg">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Cloud className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FloodReport</h1>
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Cloud className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">FloodReport</h1>
+              <span className="text-sm text-blue-100">Dashboard</span>
+            </div>
           </div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">Dashboard</span>
         </div>
         
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
             onClick={handleSetToNow}
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           >
             <Clock className="h-4 w-4 mr-2" />
             Now
@@ -57,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="outline"
             size="icon"
             onClick={toggleTheme}
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>

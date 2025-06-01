@@ -46,9 +46,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     return format(date, 'MM/dd/yyyy HH:mm') + ' GMT+7';
   };
 
-  // Generate minute options based on whether it's a future date
-  // Future dates: only hourly (0 minutes)
-  // Past/current dates: 15-minute intervals (0, 15, 30, 45)
+  const today = new Date();
+  const maxDate = addDays(today, 3);
+  const isFutureDate = selectedDateTime > today;
   const minuteOptions = isFutureDate ? [0] : Array.from({ length: 4 }, (_, i) => i * 15);
 
   return (
@@ -57,14 +57,14 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         <Button
           variant="outline"
           className={cn(
-            "justify-start text-left font-normal border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            "justify-start text-left font-normal border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           )}
         >
-          <Calendar className="mr-2 h-4 w-4 text-gray-500" />
+          <Calendar className="mr-2 h-4 w-4" />
           {formatDateTime(selectedDateTime)}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-white border-paynes_gray-300 dark:bg-rich_black-400 dark:border-paynes_gray-300 z-[9999]" align="end">
+      <PopoverContent className="w-auto p-0 bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600 z-[9999]" align="end">
         <div className="p-4 space-y-4">
           <CalendarComponent
             mode="single"
@@ -74,13 +74,13 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             initialFocus
             className="pointer-events-auto"
           />
-          <div className="flex items-center space-x-2 border-t border-paynes_gray-300 pt-4">
-            <Clock className="h-4 w-4 text-paynes_gray-400" />
+          <div className="flex items-center space-x-2 border-t border-gray-300 pt-4">
+            <Clock className="h-4 w-4 text-gray-600" />
             <div className="flex space-x-2">
               <select
                 value={selectedDateTime.getHours()}
                 onChange={(e) => handleTimeChange('hours', parseInt(e.target.value))}
-                className="bg-mint_cream-500 border border-paynes_gray-300 rounded px-2 py-1 text-paynes_gray-700 text-sm dark:bg-rich_black-300 dark:border-paynes_gray-200 dark:text-mint_cream-400"
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-700 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 focus:ring-2 focus:ring-blue-500"
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <option key={i} value={i}>
@@ -88,11 +88,11 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                   </option>
                 ))}
               </select>
-              <span className="text-paynes_gray-400">:</span>
+              <span className="text-gray-400">:</span>
               <select
                 value={selectedDateTime.getMinutes()}
                 onChange={(e) => handleTimeChange('minutes', parseInt(e.target.value))}
-                className="bg-mint_cream-500 border border-paynes_gray-300 rounded px-2 py-1 text-paynes_gray-700 text-sm dark:bg-rich_black-300 dark:border-paynes_gray-200 dark:text-mint_cream-400"
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-700 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 focus:ring-2 focus:ring-blue-500"
                 disabled={isFutureDate && minuteOptions.length === 1}
               >
                 {minuteOptions.map((minutes) => (
