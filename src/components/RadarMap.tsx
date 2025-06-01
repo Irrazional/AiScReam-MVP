@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,7 +22,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const [openWeatherKey, setOpenWeatherKey] = useState<string>(() => {
     return localStorage.getItem('openweather-api-key') || '';
   });
-  const [activeLayer, setActiveLayer] = useState<'precipitation' | 'wind' | 'clouds'>('precipitation');
+  const [activeLayer, setActiveLayer] = useState<'precipitation' | 'temperature' | 'wind' | 'pressure'>('precipitation');
   const [isLoading, setIsLoading] = useState(false);
 
   const getRiskColor = (risk: number) => {
@@ -68,7 +69,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     });
   };
 
-  const addWeatherLayer = (layerType: 'precipitation' | 'wind' | 'clouds') => {
+  const addWeatherLayer = (layerType: 'precipitation' | 'temperature' | 'wind' | 'pressure') => {
     if (!mapInstanceRef.current || !openWeatherKey) return;
 
     console.log('Adding weather layer:', layerType, 'with API key:', openWeatherKey.substring(0, 8) + '...');
@@ -80,21 +81,24 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     });
     weatherLayersRef.current = [];
 
-    let layerName = '';
+    let layerCode = '';
     switch (layerType) {
       case 'precipitation':
-        layerName = 'precipitation_new';
+        layerCode = 'PAC0'; // Convective precipitation
+        break;
+      case 'temperature':
+        layerCode = 'TA2'; // Air temperature at 2 meters
         break;
       case 'wind':
-        layerName = 'wind_new';
+        layerCode = 'WND'; // Wind speed and direction
         break;
-      case 'clouds':
-        layerName = 'clouds_new';
+      case 'pressure':
+        layerCode = 'APM'; // Atmospheric pressure on mean sea level
         break;
     }
 
     const weatherLayer = L.tileLayer(
-      `https://tile.openweathermap.org/map/${layerName}/{z}/{x}/{y}.png?appid=${openWeatherKey}`,
+      `https://maps.openweathermap.org/maps/2.0/weather/${layerCode}/{z}/{x}/{y}?appid=${openWeatherKey}`,
       {
         maxZoom: 16,
         opacity: 0.6,
@@ -279,6 +283,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             Curah Hujan
           </button>
           <button
+            onClick={() => setActiveLayer('temperature')}
+            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeLayer === 'temperature'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Suhu
+          </button>
+          <button
             onClick={() => setActiveLayer('wind')}
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeLayer === 'wind'
@@ -289,14 +303,14 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             Angin
           </button>
           <button
-            onClick={() => setActiveLayer('clouds')}
+            onClick={() => setActiveLayer('pressure')}
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeLayer === 'clouds'
+              activeLayer === 'pressure'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Awan
+            Tekanan
           </button>
         </div>
         
