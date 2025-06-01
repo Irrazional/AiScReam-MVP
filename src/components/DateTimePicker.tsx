@@ -22,6 +22,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const today = new Date();
   const maxDate = addDays(today, 3);
   const isFutureDate = selectedDateTime > today;
+  const minuteOptions = isFutureDate ? [0] : Array.from({ length: 4 }, (_, i) => i * 15);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -45,11 +46,6 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const formatDateTime = (date: Date) => {
     return format(date, 'MM/dd/yyyy HH:mm') + ' GMT+7';
   };
-
-  const today = new Date();
-  const maxDate = addDays(today, 3);
-  const isFutureDate = selectedDateTime > today;
-  const minuteOptions = isFutureDate ? [0] : Array.from({ length: 4 }, (_, i) => i * 15);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
