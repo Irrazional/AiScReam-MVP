@@ -1,4 +1,3 @@
-
 import { WeatherData, OpenMeteoResponse } from '../types/weather';
 
 const getWeatherDescription = (weatherCode: number): string => {
@@ -76,14 +75,29 @@ const calculateFloodRisk = (weatherData: {
   return Math.min(100, Math.max(0, risk));
 };
 
-const fetchFromOpenWeatherMap = async (latitude: number, longitude: number): Promise<WeatherData> => {
+const fetchFromOpenWeatherMap = async (latitude: number, longitude: number, dateTime?: Date): Promise<WeatherData> => {
   const apiKey = localStorage.getItem('openweather-api-key');
   
   if (!apiKey) {
     throw new Error('OpenWeatherMap API key not found');
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+  const now = new Date();
+  const isCurrentWeather = !dateTime || Math.abs(dateTime.getTime() - now.getTime()) < 3600000; // Within 1 hour
+  const isFuture = dateTime && dateTime > now;
+
+  let url: string;
+  
+  if (isCurrentWeather) {
+    // Current weather API
+    url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+  } else if (isFuture) {
+    // 5-day forecast API (3-hour intervals)
+    url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+  } else {
+    // For historical data, OpenWeatherMap requires a paid plan, so we'll fall back to Open-Meteo
+    throw new Error('Historical data not available in OpenWeatherMap free tier');
+  }
   
   console.log('Fetching from OpenWeatherMap:', url.replace(apiKey, '***'));
   
@@ -96,24 +110,110 @@ const fetchFromOpenWeatherMap = async (latitude: number, longitude: number): Pro
   const data = await response.json();
   console.log('OpenWeatherMap response:', data);
 
-  const weatherCode = mapOpenWeatherToWMO(data.weather[0].id);
-  const precipitation = data.rain?.['1h'] || data.snow?.['1h'] || 0;
+  let weatherInfo;
+  
+  if (isFuture && data.list) {
+    // Find the closest forecast entry to the requested time
+    const targetTime = dateTime!.getTime();
+    const closestEntry = data.list.reduce((closest: any, current: any) => {
+      const currentTime = new Date(current.dt * 1000).getTime();
+      const closestTime = new Date(closest.dt * 1000).getTime();
+      return Math.abs(currentTime - targetTime) < Math.abs(closestTime - targetTime) ? current : closest;
+    });
+    weatherInfo = closestEntry;
+  } else {
+    weatherInfo = data;
+  }
+
+  const weatherCode = mapOpenWeatherToWMO(weatherInfo.weather[0].id);
+  const precipitation = weatherInfo.rain?.['1h'] || weatherInfo.rain?.['3h'] || weatherInfo.snow?.['1h'] || weatherInfo.snow?.['3h'] || 0;
 
   const floodRisk = calculateFloodRisk({
     precipitation,
-    humidity: data.main.humidity,
-    windSpeed: data.wind.speed * 3.6, // Convert m/s to km/h
+    humidity: weatherInfo.main.humidity,
+    windSpeed: weatherInfo.wind.speed * 3.6, // Convert m/s to km/h
     weatherCode,
   });
 
   return {
-    temperature: Math.round(data.main.temp),
-    humidity: data.main.humidity,
-    windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+    temperature: Math.round(weatherInfo.main.temp),
+    humidity: weatherInfo.main.humidity,
+    windSpeed: Math.round(weatherInfo.wind.speed * 3.6), // Convert m/s to km/h
     precipitation,
-    description: getOpenWeatherDescription(data.weather[0].id, data.weather[0].description),
+    description: getOpenWeatherDescription(weatherInfo.weather[0].id, weatherInfo.weather[0].description),
     floodRisk,
     weatherCode,
+  };
+};
+
+const fetchFromOpenMeteo = async (latitude: number, longitude: number, dateTime?: Date): Promise<WeatherData> => {
+  const now = new Date();
+  const isHistorical = dateTime && dateTime < now;
+  const isFuture = dateTime && dateTime > now;
+  let url: string;
+
+  if (isHistorical) {
+    // Format date for historical API (YYYY-MM-DD)
+    const date = dateTime.toISOString().split('T')[0];
+    url = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${date}&end_date=${date}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FBangkok`;
+  } else if (isFuture) {
+    // Use forecast API for future dates (up to 7 days)
+    url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weather_code,relative_humidity_2m,dew_point_2m,rain&timezone=Asia%2FBangkok`;
+  } else {
+    // Current weather API
+    url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FBangkok`;
+  }
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Open-Meteo API request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  let weatherData;
+  if ((isHistorical || isFuture) && data.hourly) {
+    // For historical or future data, find the closest hour
+    const targetHour = dateTime!.getHours();
+    const targetDate = dateTime!.toISOString().split('T')[0];
+    
+    // Find the correct day and hour index
+    const timeArray = data.hourly.time;
+    const targetIndex = timeArray.findIndex((time: string) => {
+      const timeDate = time.split('T')[0];
+      const timeHour = parseInt(time.split('T')[1].split(':')[0]);
+      return timeDate === targetDate && timeHour === targetHour;
+    });
+    
+    const index = targetIndex >= 0 ? targetIndex : 0;
+    
+    weatherData = {
+      temperature_2m: data.hourly.temperature_2m[index] || data.hourly.temperature_2m[0],
+      relative_humidity_2m: data.hourly.relative_humidity_2m[index] || data.hourly.relative_humidity_2m[0],
+      wind_speed_10m: 10, // Default wind speed as it's not in forecast API
+      precipitation: data.hourly.rain ? data.hourly.rain[index] || 0 : 0,
+      weather_code: data.hourly.weather_code[index] || data.hourly.weather_code[0],
+    };
+  } else {
+    weatherData = data.current;
+  }
+
+  const floodRisk = calculateFloodRisk({
+    precipitation: weatherData.precipitation,
+    humidity: weatherData.relative_humidity_2m,
+    windSpeed: weatherData.wind_speed_10m || 10,
+    weatherCode: weatherData.weather_code,
+  });
+
+  return {
+    temperature: Math.round(weatherData.temperature_2m),
+    humidity: weatherData.relative_humidity_2m,
+    windSpeed: Math.round(weatherData.wind_speed_10m || 10),
+    precipitation: weatherData.precipitation,
+    description: getWeatherDescription(weatherData.weather_code),
+    floodRisk,
+    weatherCode: weatherData.weather_code,
   };
 };
 
@@ -123,89 +223,16 @@ export const fetchWeatherData = async (
   dateTime?: Date
 ): Promise<WeatherData> => {
   try {
-    const now = new Date();
-    const isCurrentWeather = !dateTime || Math.abs(dateTime.getTime() - now.getTime()) < 3600000; // Within 1 hour
-
-    // Use OpenWeatherMap for current weather
-    if (isCurrentWeather) {
-      try {
-        return await fetchFromOpenWeatherMap(latitude, longitude);
-      } catch (error) {
-        console.warn('OpenWeatherMap failed, falling back to Open-Meteo:', error);
-        // Fall through to Open-Meteo fallback
-      }
+    // Always try OpenWeatherMap first
+    try {
+      return await fetchFromOpenWeatherMap(latitude, longitude, dateTime);
+    } catch (error) {
+      console.warn('OpenWeatherMap failed, falling back to Open-Meteo:', error);
+      // Fall back to Open-Meteo
+      return await fetchFromOpenMeteo(latitude, longitude, dateTime);
     }
-
-    // Use Open-Meteo for historical/future data or as fallback
-    const isHistorical = dateTime && dateTime < now;
-    const isFuture = dateTime && dateTime > now;
-    let url: string;
-
-    if (isHistorical) {
-      // Format date for historical API (YYYY-MM-DD)
-      const date = dateTime.toISOString().split('T')[0];
-      url = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${date}&end_date=${date}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FBangkok`;
-    } else if (isFuture) {
-      // Use forecast API for future dates (up to 7 days)
-      url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weather_code,relative_humidity_2m,dew_point_2m,rain&timezone=Asia%2FBangkok`;
-    } else {
-      // Current weather API
-      url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=Asia%2FBangkok`;
-    }
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Weather API request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    let weatherData;
-    if ((isHistorical || isFuture) && data.hourly) {
-      // For historical or future data, find the closest hour
-      const targetHour = dateTime!.getHours();
-      const targetDate = dateTime!.toISOString().split('T')[0];
-      
-      // Find the correct day and hour index
-      const timeArray = data.hourly.time;
-      const targetIndex = timeArray.findIndex((time: string) => {
-        const timeDate = time.split('T')[0];
-        const timeHour = parseInt(time.split('T')[1].split(':')[0]);
-        return timeDate === targetDate && timeHour === targetHour;
-      });
-      
-      const index = targetIndex >= 0 ? targetIndex : 0;
-      
-      weatherData = {
-        temperature_2m: data.hourly.temperature_2m[index] || data.hourly.temperature_2m[0],
-        relative_humidity_2m: data.hourly.relative_humidity_2m[index] || data.hourly.relative_humidity_2m[0],
-        wind_speed_10m: 10, // Default wind speed as it's not in forecast API
-        precipitation: data.hourly.rain ? data.hourly.rain[index] || 0 : 0,
-        weather_code: data.hourly.weather_code[index] || data.hourly.weather_code[0],
-      };
-    } else {
-      weatherData = data.current;
-    }
-
-    const floodRisk = calculateFloodRisk({
-      precipitation: weatherData.precipitation,
-      humidity: weatherData.relative_humidity_2m,
-      windSpeed: weatherData.wind_speed_10m || 10,
-      weatherCode: weatherData.weather_code,
-    });
-
-    return {
-      temperature: Math.round(weatherData.temperature_2m),
-      humidity: weatherData.relative_humidity_2m,
-      windSpeed: Math.round(weatherData.wind_speed_10m || 10),
-      precipitation: weatherData.precipitation,
-      description: getWeatherDescription(weatherData.weather_code),
-      floodRisk,
-      weatherCode: weatherData.weather_code,
-    };
   } catch (error) {
-    console.error('Error fetching weather data:', error);
+    console.error('Error fetching weather data from both APIs:', error);
     
     // Return mock data with some randomization for demonstration
     const mockRisk = Math.floor(Math.random() * 100);

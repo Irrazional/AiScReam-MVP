@@ -4,7 +4,6 @@ import { WeatherSidebar } from '../components/WeatherSidebar';
 import { FloodMap } from '../components/FloodMap';
 import { RadarMap } from '../components/RadarMap';
 import { Header } from '../components/Header';
-import { ViewToggle } from '../components/ViewToggle';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { LocationData, WeatherData } from '../types/weather';
 import { fetchWeatherData } from '../services/weatherService';
@@ -93,18 +92,12 @@ const IndexContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <Header 
-            selectedDateTime={selectedDateTime}
-            onDateTimeChange={setSelectedDateTime}
-          />
-          <ViewToggle
-            currentView={currentView}
-            onViewChange={setCurrentView}
-          />
-        </div>
-      </div>
+      <Header 
+        selectedDateTime={selectedDateTime}
+        onDateTimeChange={setSelectedDateTime}
+        currentView={currentView}
+        onViewChange={setCurrentView}
+      />
       <div className="flex h-[calc(100vh-80px)]">
         <WeatherSidebar
           locations={sortedLocations}

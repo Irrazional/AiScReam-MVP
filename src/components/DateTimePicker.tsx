@@ -44,6 +44,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
     return format(date, 'MM/dd/yyyy HH:mm') + ' GMT+7';
   };
 
+  // Generate 15-minute intervals (0, 15, 30, 45)
+  const minuteOptions = Array.from({ length: 4 }, (_, i) => i * 15);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -88,9 +91,9 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
                 onChange={(e) => handleTimeChange('minutes', parseInt(e.target.value))}
                 className="bg-mint_cream-500 border border-paynes_gray-300 rounded px-2 py-1 text-paynes_gray-700 text-sm dark:bg-rich_black-300 dark:border-paynes_gray-200 dark:text-mint_cream-400"
               >
-                {Array.from({ length: 60 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {i.toString().padStart(2, '0')}
+                {minuteOptions.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {minutes.toString().padStart(2, '0')}
                   </option>
                 ))}
               </select>
