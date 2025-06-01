@@ -92,7 +92,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
         <div className="mb-6">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Button variant="outline" className="w-full justify-between border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 dark:hover:bg-blue-900/20 dark:hover:border-blue-600 dark:hover:text-blue-300">
                 <div className="flex items-center space-x-2">
                   <Settings className="w-4 h-4" />
                   <span>Filter & Sort</span>

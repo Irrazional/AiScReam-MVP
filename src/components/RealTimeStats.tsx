@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Activity, Droplets, Waves, TrendingUp } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Waves } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface RealTimeStatsProps {
@@ -11,79 +11,114 @@ interface RealTimeStatsProps {
 interface DataPoint {
   time: string;
   waterLevel: number;
-  flowRate: number;
-  rainfall: number;
-  temperature: number;
+}
+
+interface LocationWaterData {
+  locationId: string;
+  locationName: string;
+  locationType: 'watergate' | 'village';
+  data: DataPoint[];
+  currentLevel: number;
 }
 
 export const RealTimeStats: React.FC<RealTimeStatsProps> = ({ onClose }) => {
-  const [data, setData] = useState<DataPoint[]>([]);
-  const [currentStats, setCurrentStats] = useState({
-    waterLevel: 2.45,
-    flowRate: 15.2,
-    rainfall: 0.8,
-    temperature: 28.5,
-  });
+  const [locationData, setLocationData] = useState<LocationWaterData[]>([]);
 
-  // Initialize with some historical data
+  // Define all locations (watergates and villages)
+  const locations = [
+    // Watergates
+    { id: 'bendung-katulampa', name: 'Bendung Katulampa', type: 'watergate' as const },
+    { id: 'pos-depok', name: 'Pos Depok', type: 'watergate' as const },
+    { id: 'manggarai-bkb', name: 'Manggarai BKB', type: 'watergate' as const },
+    { id: 'pa-karet', name: 'P.A Karet', type: 'watergate' as const },
+    { id: 'pos-krukut-hulu', name: 'Pos Krukut Hulu', type: 'watergate' as const },
+    { id: 'pos-pesanggrahan', name: 'Pos Pesanggrahan', type: 'watergate' as const },
+    { id: 'pos-angke-hulu', name: 'Pos Angke Hulu', type: 'watergate' as const },
+    { id: 'waduk-pluit', name: 'Waduk Pluit', type: 'watergate' as const },
+    { id: 'pasar-ikan-laut', name: 'Pasar Ikan - Laut', type: 'watergate' as const },
+    { id: 'pos-cipinang-hulu', name: 'Pos Cipinang Hulu', type: 'watergate' as const },
+    { id: 'pos-sunter-hulu', name: 'Pos Sunter Hulu', type: 'watergate' as const },
+    { id: 'pulo-gadung', name: 'Pulo Gadung', type: 'watergate' as const },
+    // Villages
+    { id: 'penjaringan', name: 'Penjaringan', type: 'village' as const },
+    { id: 'pademangan', name: 'Pademangan', type: 'village' as const },
+    { id: 'tanjung-priok', name: 'Tanjung Priok', type: 'village' as const },
+    { id: 'koja', name: 'Koja', type: 'village' as const },
+    { id: 'kelapa-gading', name: 'Kelapa Gading', type: 'village' as const },
+    { id: 'cilincing', name: 'Cilincing', type: 'village' as const },
+  ];
+
+  // Initialize with historical data for all locations
   useEffect(() => {
-    const initialData: DataPoint[] = [];
-    const now = new Date();
+    const initialData: LocationWaterData[] = locations.map(location => {
+      const data: DataPoint[] = [];
+      const now = new Date();
+      const baseLevel = 2.0 + Math.random() * 1.0; // Random base level between 2.0-3.0m
+      
+      for (let i = 29; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * 1000);
+        data.push({
+          time: time.toLocaleTimeString('en-US', { hour12: false }),
+          waterLevel: baseLevel + Math.random() * 0.3 - 0.15, // Small variation around base
+        });
+      }
+      
+      return {
+        locationId: location.id,
+        locationName: location.name,
+        locationType: location.type,
+        data,
+        currentLevel: data[data.length - 1].waterLevel,
+      };
+    });
     
-    for (let i = 29; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 1000);
-      initialData.push({
-        time: time.toLocaleTimeString('en-US', { hour12: false }),
-        waterLevel: 2.4 + Math.random() * 0.2,
-        flowRate: 15 + Math.random() * 2,
-        rainfall: Math.random() * 2,
-        temperature: 28 + Math.random() * 2,
-      });
-    }
-    
-    setData(initialData);
+    setLocationData(initialData);
   }, []);
 
-  // Update data every second
+  // Update data every second for all locations
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const newPoint: DataPoint = {
-        time: now.toLocaleTimeString('en-US', { hour12: false }),
-        waterLevel: currentStats.waterLevel + (Math.random() - 0.5) * 0.05,
-        flowRate: currentStats.flowRate + (Math.random() - 0.5) * 0.3,
-        rainfall: Math.max(0, currentStats.rainfall + (Math.random() - 0.5) * 0.1),
-        temperature: currentStats.temperature + (Math.random() - 0.5) * 0.1,
-      };
+      
+      setLocationData(prevData => 
+        prevData.map(locationData => {
+          const newLevel = locationData.currentLevel + (Math.random() - 0.5) * 0.02; // Very small changes
+          const newPoint: DataPoint = {
+            time: now.toLocaleTimeString('en-US', { hour12: false }),
+            waterLevel: Math.max(0, newLevel), // Ensure non-negative
+          };
 
-      setCurrentStats({
-        waterLevel: newPoint.waterLevel,
-        flowRate: newPoint.flowRate,
-        rainfall: newPoint.rainfall,
-        temperature: newPoint.temperature,
-      });
-
-      setData(prevData => {
-        const newData = [...prevData, newPoint];
-        return newData.slice(-30); // Keep only last 30 points
-      });
+          return {
+            ...locationData,
+            currentLevel: newPoint.waterLevel,
+            data: [...locationData.data.slice(-29), newPoint], // Keep last 30 points
+          };
+        })
+      );
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentStats]);
+  }, []);
 
   const formatValue = (value: number, decimals: number = 2) => {
     return value.toFixed(decimals);
   };
 
+  const getStatusColor = (level: number) => {
+    if (level >= 3.5) return 'text-red-600';
+    if (level >= 2.8) return 'text-orange-600';
+    if (level >= 2.0) return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-[80vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-7xl h-[85vh] overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-blue-600 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Real-Time Water Level Statistics</h2>
-              <p className="text-blue-100 mt-1">Live IoT Monitoring Dashboard</p>
+              <h2 className="text-2xl font-bold">Real-Time Water Level Monitoring</h2>
+              <p className="text-blue-100 mt-1">Live IoT Water Level Sensors Across Jakarta Utara</p>
             </div>
             <Button
               onClick={onClose}
@@ -96,194 +131,122 @@ export const RealTimeStats: React.FC<RealTimeStatsProps> = ({ onClose }) => {
         </div>
 
         <div className="p-6 overflow-y-auto h-full">
-          {/* Current Stats Cards */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
+          {/* Overall Stats Summary */}
+          <div className="mb-6 grid grid-cols-4 gap-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-500 rounded-lg">
-                  <Waves className="w-6 h-6 text-white" />
+                  <Waves className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Water Level</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {formatValue(currentStats.waterLevel)} m
-                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Sensors</p>
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{locationData.length}</p>
                 </div>
               </div>
             </div>
-
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-green-500 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-white" />
+                  <Waves className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Flow Rate</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {formatValue(currentStats.flowRate, 1)} m³/s
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Normal Levels</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                    {locationData.filter(l => l.currentLevel < 2.8).length}
                   </p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4 border border-cyan-200 dark:border-cyan-800">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-cyan-500 rounded-lg">
-                  <Droplets className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Rainfall</p>
-                  <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-                    {formatValue(currentStats.rainfall, 1)} mm/h
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-orange-500 rounded-lg">
-                  <Activity className="w-6 h-6 text-white" />
+                  <Waves className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Temperature</p>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {formatValue(currentStats.temperature, 1)}°C
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Watch Levels</p>
+                  <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                    {locationData.filter(l => l.currentLevel >= 2.8 && l.currentLevel < 3.5).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-red-500 rounded-lg">
+                  <Waves className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Alert Levels</p>
+                  <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                    {locationData.filter(l => l.currentLevel >= 3.5).length}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Charts */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Water Level (Real-time)</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="time" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    domain={['dataMin - 0.1', 'dataMax + 0.1']}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`${formatValue(value)} m`, 'Water Level']}
-                    labelFormatter={(label) => `Time: ${label}`}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="waterLevel" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={false}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Flow Rate (Real-time)</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="time" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`${formatValue(value, 1)} m³/s`, 'Flow Rate']}
-                    labelFormatter={(label) => `Time: ${label}`}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="flowRate" 
-                    stroke="#10b981" 
-                    fill="#10b981"
-                    fillOpacity={0.3}
-                    strokeWidth={2}
-                    animationDuration={300}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Rainfall Intensity</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="time" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    domain={[0, 'dataMax + 0.5']}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`${formatValue(value, 1)} mm/h`, 'Rainfall']}
-                    labelFormatter={(label) => `Time: ${label}`}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="rainfall" 
-                    stroke="#06b6d4" 
-                    fill="#06b6d4"
-                    fillOpacity={0.3}
-                    strokeWidth={2}
-                    animationDuration={300}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Temperature</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="time" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`${formatValue(value, 1)}°C`, 'Temperature']}
-                    labelFormatter={(label) => `Time: ${label}`}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="temperature" 
-                    stroke="#f97316" 
-                    strokeWidth={2}
-                    dot={false}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Compact Grid of Water Level Charts */}
+          <div className="grid grid-cols-3 gap-4">
+            {locationData.map((location) => (
+              <div key={location.locationId} className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {location.locationName}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {location.locationType === 'watergate' ? 'Pintu Air' : 'Daerah'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold ${getStatusColor(location.currentLevel)}`}>
+                      {formatValue(location.currentLevel)} m
+                    </p>
+                    <p className="text-xs text-gray-500">Current</p>
+                  </div>
+                </div>
+                
+                <ResponsiveContainer width="100%" height={120}>
+                  <LineChart data={location.data}>
+                    <XAxis 
+                      dataKey="time" 
+                      tick={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      domain={['dataMin - 0.1', 'dataMax + 0.1']}
+                      tick={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`${formatValue(value)} m`, 'Water Level']}
+                      labelFormatter={(label) => `Time: ${label}`}
+                      contentStyle={{ 
+                        fontSize: '12px',
+                        padding: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="waterLevel" 
+                      stroke="#3b82f6" 
+                      strokeWidth={1.5}
+                      dot={false}
+                      animationDuration={300}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ))}
           </div>
 
           <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Live data updating every second • Connected to IoT sensors</span>
+              <span>Live data updating every second • {locationData.length} IoT water level sensors connected</span>
             </div>
           </div>
         </div>
