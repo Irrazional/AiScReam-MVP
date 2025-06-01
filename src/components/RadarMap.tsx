@@ -1,8 +1,9 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LocationData } from '../types/weather';
+import { RealTimeStats } from './RealTimeStats';
+import { Button } from './ui/button';
 
 interface RadarMapProps {
   locations: LocationData[];
@@ -24,6 +25,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   });
   const [activeLayer, setActiveLayer] = useState<'precipitation' | 'temperature' | 'wind' | 'pressure'>('precipitation');
   const [isLoading, setIsLoading] = useState(false);
+  const [showRealTimeStats, setShowRealTimeStats] = useState(false);
 
   const getRiskColor = (risk: number) => {
     if (risk >= 80) return '#ef4444';
@@ -238,7 +240,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
               }
             }}
           />
-          <button
+          <Button
             onClick={() => {
               const input = document.querySelector('input[placeholder="Enter OpenWeatherMap API Key"]') as HTMLInputElement;
               if (input?.value) {
@@ -257,6 +259,11 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
+      
+      {/* Real-time Stats Modal */}
+      {showRealTimeStats && (
+        <RealTimeStats onClose={() => setShowRealTimeStats(false)} />
+      )}
       
       {/* Loading indicator */}
       {isLoading && (
@@ -313,6 +320,18 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             Tekanan
           </button>
         </div>
+        
+        {/* Divider */}
+        <div className="border-t border-gray-200 my-4"></div>
+        
+        {/* Real-time Stats Button */}
+        <button
+          onClick={() => setShowRealTimeStats(true)}
+          className="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          <span>Real Time Statistik</span>
+        </button>
         
         {/* API Key management */}
         <div className="mt-4 pt-4 border-t border-gray-200">

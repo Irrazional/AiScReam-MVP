@@ -57,10 +57,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         <Button
           variant="outline"
           className={cn(
-            "justify-start text-left font-normal border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+            "justify-start text-left font-normal border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           )}
         >
-          <Calendar className="mr-2 h-4 w-4 text-blue-500" />
+          <Calendar className="mr-2 h-4 w-4 text-gray-500" />
           {formatDateTime(selectedDateTime)}
         </Button>
       </PopoverTrigger>

@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Button
             variant="outline"
             onClick={handleSetToNow}
-            className="border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Clock className="h-4 w-4 mr-2" />
             Now
@@ -57,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
             variant="outline"
             size="icon"
             onClick={toggleTheme}
-            className="border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
