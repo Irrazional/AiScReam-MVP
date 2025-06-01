@@ -250,7 +250,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             Load Radar Map
-          </button>
+          </Button>
         </div>
       </div>
     );
