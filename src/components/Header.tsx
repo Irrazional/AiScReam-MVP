@@ -1,23 +1,22 @@
-
-import React from 'react';
-import { Cloud, Sun, Moon, Clock } from 'lucide-react';
-import { DateTimePicker } from './DateTimePicker';
-import { ViewToggle } from './ViewToggle';
-import { useTheme } from './ThemeProvider';
-import { Button } from './ui/button';
+import React from "react";
+import { Cloud, Sun, Moon, Clock } from "lucide-react";
+import { DateTimePicker } from "./DateTimePicker";
+import { ViewToggle } from "./ViewToggle";
+import { useTheme } from "./ThemeProvider";
+import { Button } from "./ui/button";
 
 interface HeaderProps {
   selectedDateTime: Date;
   onDateTimeChange: (date: Date) => void;
-  currentView: 'basic' | 'advanced';
-  onViewChange: (view: 'basic' | 'advanced') => void;
+  currentView: "basic" | "advanced";
+  onViewChange: (view: "basic" | "advanced") => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  selectedDateTime, 
-  onDateTimeChange, 
-  currentView, 
-  onViewChange 
+export const Header: React.FC<HeaderProps> = ({
+  selectedDateTime,
+  onDateTimeChange,
+  currentView,
+  onViewChange,
 }) => {
   const { theme, toggleTheme } = useTheme();
 
@@ -39,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
@@ -47,23 +46,24 @@ export const Header: React.FC<HeaderProps> = ({
             className="border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           >
             <Clock className="h-4 w-4 mr-2" />
-            Now
+            Kini
           </Button>
           <DateTimePicker
             selectedDateTime={selectedDateTime}
             onDateTimeChange={onDateTimeChange}
           />
-          <ViewToggle
-            currentView={currentView}
-            onViewChange={onViewChange}
-          />
+          <ViewToggle currentView={currentView} onViewChange={onViewChange} />
           <Button
             variant="outline"
             size="icon"
             onClick={toggleTheme}
             className="border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           >
-            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            {theme === "light" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
