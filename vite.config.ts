@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
-  base: "/AiScReam-MVP",
+  base: "/AiScReam-MVP/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
