@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { LocationData } from '../types/weather';
 import { WeatherCard } from './WeatherCard';
 import { LocationFilter, FilterOptions } from './LocationFilter';
@@ -35,6 +36,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   onFilterChange,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const filteredLocations = locations.filter(location => {
     if (location.type === 'watergate') {
@@ -42,6 +44,24 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
     } else {
       return filters.showVillages;
     }
+  });
+
+  const sortedLocations = [...filteredLocations].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'risk':
+        comparison = (a.weather?.floodRisk || 0) - (b.weather?.floodRisk || 0);
+        break;
+      case 'temperature':
+        comparison = (a.weather?.temperature || 0) - (b.weather?.temperature || 0);
+        break;
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   const getSortLabel = (sortType: string) => {
@@ -53,9 +73,18 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
     }
   };
 
+  const handleSortChange = (newSortBy: 'name' | 'risk' | 'temperature') => {
+    if (newSortBy === sortBy) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      onSortChange(newSortBy);
+      setSortOrder('asc');
+    }
+  };
+
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg">
+      <div className="w-12 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg transition-all duration-300 ease-in-out">
         <div className="p-3 border-b border-gray-200 dark:border-gray-700">
           <Button
             variant="ghost"
@@ -71,7 +100,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   }
 
   return (
-    <div className="w-96 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col shadow-lg">
+    <div className="w-96 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col shadow-lg transition-all duration-300 ease-in-out">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -96,18 +125,24 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
                   <Settings className="w-4 h-4" />
                   <span>Filter & Sort</span>
                 </div>
+                <div className="flex items-center space-x-1">
+                  {sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-white border-gray-200 shadow-xl" align="start">
+            <DropdownMenuContent className="w-56 bg-white border-gray-200 shadow-xl z-50" align="start">
               <DropdownMenuLabel>Sort Options</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onSortChange('name')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200">
-                Sort by Name
+              <DropdownMenuItem onClick={() => handleSortChange('name')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200 flex items-center justify-between">
+                <span>Sort by Name</span>
+                {sortBy === 'name' && (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange('risk')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200">
-                Sort by Flood Risk
+              <DropdownMenuItem onClick={() => handleSortChange('risk')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200 flex items-center justify-between">
+                <span>Sort by Flood Risk</span>
+                {sortBy === 'risk' && (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSortChange('temperature')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200">
-                Sort by Temperature
+              <DropdownMenuItem onClick={() => handleSortChange('temperature')} className="hover:bg-blue-50 hover:text-blue-700 transition-colors duration-200 flex items-center justify-between">
+                <span>Sort by Temperature</span>
+                {sortBy === 'temperature' && (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Filters</DropdownMenuLabel>
@@ -131,14 +166,21 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
             </div>
           </div>
         ) : (
-          filteredLocations.map((location) => (
-            <WeatherCard
-              key={location.id}
-              location={location}
-              isSelected={selectedLocation?.id === location.id}
-              onSelect={() => onLocationSelect(location)}
-            />
-          ))
+          <div className="space-y-3">
+            {sortedLocations.map((location) => (
+              <div
+                key={location.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${sortedLocations.indexOf(location) * 50}ms` }}
+              >
+                <WeatherCard
+                  location={location}
+                  isSelected={selectedLocation?.id === location.id}
+                  onSelect={() => onLocationSelect(location)}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

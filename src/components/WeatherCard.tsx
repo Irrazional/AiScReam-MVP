@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Thermometer, Droplets, Wind, AlertTriangle, Building2, CloudRain } from 'lucide-react';
 import { LocationData } from '../types/weather';
@@ -77,16 +76,16 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const getTypeIndicator = () => {
     if (isWatergate) {
       return (
-        <div className="flex items-center space-x-1 bg-blue-500/10 border border-blue-300 dark:border-blue-600 px-2 py-1 rounded-full backdrop-blur-sm">
-          <Droplets className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-          <span className="text-blue-700 dark:text-blue-300 text-xs font-medium">Pintu Air</span>
+        <div className="flex items-center space-x-1 bg-blue-500/10 border border-blue-300 dark:border-blue-600 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+          <Droplets className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+          <span className="text-blue-700 dark:text-blue-300 text-[10px] font-medium">Pintu Air</span>
         </div>
       );
     } else {
       return (
-        <div className="flex items-center space-x-1 bg-emerald-500/10 border border-emerald-300 dark:border-emerald-600 px-2 py-1 rounded-full backdrop-blur-sm">
-          <Building2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-emerald-700 dark:text-emerald-300 text-xs font-medium">Daerah</span>
+        <div className="flex items-center space-x-1 bg-emerald-500/10 border border-emerald-300 dark:border-emerald-600 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+          <Building2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-emerald-700 dark:text-emerald-300 text-[10px] font-medium">Daerah</span>
         </div>
       );
     }
@@ -99,91 +98,91 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         <div className={`absolute top-0 left-0 right-0 h-0.5 ${riskColors.accent}`} />
       )}
       
-      <div className="p-3">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start space-x-2 flex-1">
+      <div className="p-2">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start space-x-2 flex-1 min-w-0">
             {location.weather && (
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <WeatherIcon
                   weatherCode={location.weather.weatherCode || 0}
                   floodRisk={location.weather.floodRisk}
-                  className="w-7 h-7"
+                  className="w-5 h-5"
                 />
-                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${riskColors.accent} border border-white dark:border-gray-800`} />
+                <div className={`absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${riskColors.accent} border border-white dark:border-gray-800`} />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="text-gray-900 dark:text-white font-bold text-sm leading-tight truncate">{location.name}</h3>
-              <div className="mt-1">
+              <h3 className="text-gray-900 dark:text-white font-bold text-xs leading-tight truncate">{location.name}</h3>
+              <div className="mt-0.5">
                 {getTypeIndicator()}
               </div>
             </div>
           </div>
           {location.weather && (
-            <div className={`px-2 py-1 rounded-lg text-xs font-bold border ${riskColors.badgeBg} ${riskColors.badgeText} backdrop-blur-sm`}>
+            <div className={`px-1.5 py-1 ml-1 rounded-lg text-xs font-bold border ${riskColors.badgeBg} ${riskColors.badgeText} backdrop-blur-sm flex-shrink-0`}>
               <div className="text-center">
-                <div className="text-xs opacity-75">{getRiskLabel(location.weather.floodRisk)}</div>
-                <div className="text-sm font-black">{location.weather.floodRisk}%</div>
+                <div className="text-[9px] opacity-75">{getRiskLabel(location.weather.floodRisk)}</div>
+                <div className="text-xs font-black">{location.weather.floodRisk}%</div>
               </div>
             </div>
           )}
         </div>
 
         {location.weather ? (
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center space-x-2 bg-white/50 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
-                <div className="p-1 bg-red-100 dark:bg-red-900/30 rounded">
-                  <Thermometer className="w-3 h-3 text-red-600 dark:text-red-400" />
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
+                <div className="p-0.5 bg-red-100 dark:bg-red-900/30 rounded">
+                  <Thermometer className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Temp</p>
-                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{location.weather.temperature}°C</p>
+                  <p className="text-[9px] text-gray-500 dark:text-gray-400">Temp</p>
+                  <p className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{location.weather.temperature}°C</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 bg-white/50 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
-                <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
-                  <Droplets className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+              <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
+                <div className="p-0.5 bg-blue-100 dark:bg-blue-900/30 rounded">
+                  <Droplets className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Humidity</p>
-                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{location.weather.humidity}%</p>
+                  <p className="text-[9px] text-gray-500 dark:text-gray-400">Humidity</p>
+                  <p className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{location.weather.humidity}%</p>
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center space-x-2 bg-white/50 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
-                <div className="p-1 bg-gray-100 dark:bg-gray-800 rounded">
-                  <Wind className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
+                <div className="p-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+                  <Wind className="w-2.5 h-2.5 text-gray-600 dark:text-gray-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Wind</p>
-                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{location.weather.windSpeed}km/h</p>
+                  <p className="text-[9px] text-gray-500 dark:text-gray-400">Wind</p>
+                  <p className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{location.weather.windSpeed}km/h</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 bg-white/50 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
-                <div className="p-1 bg-indigo-100 dark:bg-indigo-900/30 rounded">
-                  <CloudRain className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+              <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
+                <div className="p-0.5 bg-indigo-100 dark:bg-indigo-900/30 rounded">
+                  <CloudRain className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Rain</p>
-                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{location.weather.precipitation}mm</p>
+                  <p className="text-[9px] text-gray-500 dark:text-gray-400">Rain</p>
+                  <p className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{location.weather.precipitation}mm</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/30 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
-              <p className="text-gray-700 dark:text-gray-300 text-xs">
+            <div className="bg-white/30 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
+              <p className="text-gray-700 dark:text-gray-300 text-[10px]">
                 <span className="text-gray-500 dark:text-gray-400">Weather: </span>
                 <span className="font-medium">{location.weather.description}</span>
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center space-x-2 text-gray-500 dark:text-gray-400 bg-white/30 dark:bg-black/20 rounded-lg p-3 backdrop-blur-sm">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-xs font-medium">Weather data unavailable</span>
+          <div className="flex items-center justify-center space-x-1.5 text-gray-500 dark:text-gray-400 bg-white/30 dark:bg-black/20 rounded-lg p-2 backdrop-blur-sm">
+            <AlertTriangle className="w-3 h-3" />
+            <span className="text-[10px] font-medium">Weather data unavailable</span>
           </div>
         )}
       </div>
