@@ -4,6 +4,11 @@
 
 ---
 
+## 🔽 Try out our demo now!
+https://irrazional.github.io/AiScReam-MVP/
+
+---
+
 ## 🚀 Features
 
 - **🌧 Real-Time Weather Integration**  
