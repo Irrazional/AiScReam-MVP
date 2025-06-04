@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Cloud, Sun, Moon, Clock } from "lucide-react";
 import { DateTimePicker } from "./DateTimePicker";
@@ -25,34 +26,51 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 border-b border-blue-400 px-6 py-4 shadow-lg">
+    <header className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 border-b border-blue-400 px-3 md:px-6 py-3 md:py-4 shadow-lg">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Cloud className="w-8 h-8 text-white" />
+            <div className="p-1.5 md:p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Cloud className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">FloodReport</h1>
-              <span className="text-sm text-blue-100">Dashboard</span>
+              <h1 className="text-lg md:text-2xl font-bold text-white">FloodReport</h1>
+              <span className="text-xs md:text-sm text-blue-100">Dashboard</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <Button
             variant="outline"
             onClick={handleSetToNow}
-            className="border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
+            className="hidden sm:flex border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
           >
             <Clock className="h-4 w-4 mr-2" />
             Kini
           </Button>
-          <DateTimePicker
-            selectedDateTime={selectedDateTime}
-            onDateTimeChange={onDateTimeChange}
-          />
-          <ViewToggle currentView={currentView} onViewChange={onViewChange} />
+          
+          {/* Mobile: Show only clock icon */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSetToNow}
+            className="sm:hidden border-white/30 bg-white/10 text-white hover:bg-white hover:text-blue-600 backdrop-blur-sm transition-all duration-200"
+          >
+            <Clock className="h-4 w-4" />
+          </Button>
+
+          <div className="hidden md:block">
+            <DateTimePicker
+              selectedDateTime={selectedDateTime}
+              onDateTimeChange={onDateTimeChange}
+            />
+          </div>
+          
+          <div className="hidden sm:block">
+            <ViewToggle currentView={currentView} onViewChange={onViewChange} />
+          </div>
+          
           <Button
             variant="outline"
             size="icon"
@@ -66,6 +84,17 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </Button>
         </div>
+      </div>
+      
+      {/* Mobile controls row */}
+      <div className="mt-3 flex items-center justify-between md:hidden">
+        <div className="flex-1 mr-2">
+          <DateTimePicker
+            selectedDateTime={selectedDateTime}
+            onDateTimeChange={onDateTimeChange}
+          />
+        </div>
+        <ViewToggle currentView={currentView} onViewChange={onViewChange} />
       </div>
     </header>
   );
