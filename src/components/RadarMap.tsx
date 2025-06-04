@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -152,17 +153,18 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const jakartaBounds = L.latLngBounds(
-      L.latLng(-6.4, 106.6),
-      L.latLng(-5.9, 107.1)
+    // Expanded bounds to cover the new area from Bogor to Jakarta
+    const expandedBounds = L.latLngBounds(
+      L.latLng(-6.7, 106.6), // Southwest coordinates (further south to include Bogor)
+      L.latLng(-6.0, 107.0)  // Northeast coordinates
     );
 
     const map = L.map(mapRef.current, {
-      maxBounds: jakartaBounds,
+      maxBounds: expandedBounds,
       maxBoundsViscosity: 1.0,
-      minZoom: 10,
+      minZoom: 9,
       maxZoom: 16,
-    }).setView([-6.2, 106.85], 11);
+    }).setView([-6.35, 106.82], 10); // Centered to cover all locations
 
     // Base layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {

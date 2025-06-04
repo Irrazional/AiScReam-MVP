@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   MapPin,
@@ -7,6 +8,7 @@ import {
   AlertTriangle,
   Building2,
   CloudRain,
+  Waves,
 } from "lucide-react";
 import { LocationData } from "../types/weather";
 import { WeatherIcon } from "./WeatherIcon";
@@ -157,6 +159,28 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 
         {location.weather ? (
           <div className="space-y-1.5">
+            {/* Water Level for Watergates */}
+            {isWatergate && location.weather.waterLevel && (
+              <div className="bg-blue-500/10 border border-blue-300 dark:border-blue-600 rounded-lg p-1.5 backdrop-blur-sm mb-2">
+                <div className="flex items-center space-x-1.5">
+                  <div className="p-0.5 bg-blue-100 dark:bg-blue-900/30 rounded">
+                    <Waves className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[9px] text-blue-600 dark:text-blue-400 font-medium">
+                      Tinggi Air Real-time
+                    </p>
+                    <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                      {location.weather.waterLevel}m
+                    </p>
+                  </div>
+                  <div className="text-[8px] text-blue-500 dark:text-blue-400 font-medium">
+                    LIVE
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-1.5">
               <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
                 <div className="p-0.5 bg-red-100 dark:bg-red-900/30 rounded">

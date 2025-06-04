@@ -7,6 +7,7 @@ export interface WeatherData {
   description: string;
   floodRisk: number; // 0-100 percentage
   weatherCode?: number; // WMO weather code
+  waterLevel?: number; // Water level in meters (only for watergates)
 }
 
 export interface LocationData {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { WeatherSidebar } from "../components/WeatherSidebar";
 import { FloodMap } from "../components/FloodMap";
@@ -115,7 +116,8 @@ const IndexContent = () => {
           const weather = await fetchWeatherData(
             location.coordinates[0],
             location.coordinates[1],
-            selectedDateTime
+            selectedDateTime,
+            location.type
           );
           return {
             ...location,
