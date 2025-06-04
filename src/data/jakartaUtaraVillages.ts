@@ -3,47 +3,55 @@ export interface VillageData {
   name: string;
   coordinates: [number, number]; // [latitude, longitude]
   kecamatan: string;
+  nearWatergate: string; // Which watergate this area is near
 }
 
 export const jakartaUtaraVillages: VillageData[] = [
-  // Cilincing
-  { name: 'Cilincing', coordinates: [-6.107, 106.951], kecamatan: 'Cilincing' },
-  { name: 'Kalibaru', coordinates: [-6.098, 106.937], kecamatan: 'Cilincing' },
-  { name: 'Marunda', coordinates: [-6.081, 106.958], kecamatan: 'Cilincing' },
-  { name: 'Rorotan', coordinates: [-6.088, 106.980], kecamatan: 'Cilincing' },
-  { name: 'Sukapura', coordinates: [-6.115, 106.958], kecamatan: 'Cilincing' },
-  { name: 'Semper Barat', coordinates: [-6.117, 106.937], kecamatan: 'Cilincing' },
-  { name: 'Semper Timur', coordinates: [-6.115, 106.945], kecamatan: 'Cilincing' },
+  // Areas near Bendung Katulampa
+  { name: 'Kelurahan Katulampa', coordinates: [-6.630, 106.840], kecamatan: 'Bogor Timur', nearWatergate: 'Bendung Katulampa' },
+  { name: 'Desa Baranangsiang', coordinates: [-6.635, 106.835], kecamatan: 'Bogor Timur', nearWatergate: 'Bendung Katulampa' },
 
-  // Kelapa Gading
-  { name: 'Kelapa Gading Barat', coordinates: [-6.158, 106.909], kecamatan: 'Kelapa Gading' },
-  { name: 'Kelapa Gading Timur', coordinates: [-6.153, 106.923], kecamatan: 'Kelapa Gading' },
-  { name: 'Pegangsaan Dua', coordinates: [-6.169, 106.908], kecamatan: 'Kelapa Gading' },
+  // Areas near Pos Depok
+  { name: 'Kelurahan Pancoran Mas', coordinates: [-6.395, 106.828], kecamatan: 'Pancoran Mas', nearWatergate: 'Pos Depok' },
+  { name: 'Kelurahan Depok', coordinates: [-6.405, 106.835], kecamatan: 'Pancoran Mas', nearWatergate: 'Pos Depok' },
 
-  // Koja
-  { name: 'Koja', coordinates: [-6.105, 106.911], kecamatan: 'Koja' },
-  { name: 'Lagoa', coordinates: [-6.113, 106.920], kecamatan: 'Koja' },
-  { name: 'Rawa Badak Selatan', coordinates: [-6.123, 106.918], kecamatan: 'Koja' },
-  { name: 'Rawa Badak Utara', coordinates: [-6.118, 106.912], kecamatan: 'Koja' },
-  { name: 'Tugu Selatan', coordinates: [-6.112, 106.903], kecamatan: 'Koja' },
-  { name: 'Tugu Utara', coordinates: [-6.105, 106.903], kecamatan: 'Koja' },
+  // Areas near Manggarai BKB
+  { name: 'Kelurahan Manggarai', coordinates: [-6.210, 106.850], kecamatan: 'Tebet', nearWatergate: 'Manggarai BKB' },
+  { name: 'Kelurahan Menteng Dalam', coordinates: [-6.205, 106.845], kecamatan: 'Tebet', nearWatergate: 'Manggarai BKB' },
 
-  // Pademangan
-  { name: 'Ancol', coordinates: [-6.122, 106.844], kecamatan: 'Pademangan' },
-  { name: 'Pademangan Barat', coordinates: [-6.138, 106.839], kecamatan: 'Pademangan' },
-  { name: 'Pademangan Timur', coordinates: [-6.135, 106.850], kecamatan: 'Pademangan' },
+  // Areas near P.A Karet
+  { name: 'Kelurahan Karet Tengsin', coordinates: [-6.195, 106.812], kecamatan: 'Tanah Abang', nearWatergate: 'P.A Karet' },
+  { name: 'Kelurahan Bendungan Hilir', coordinates: [-6.200, 106.808], kecamatan: 'Tanah Abang', nearWatergate: 'P.A Karet' },
 
-  // Penjaringan
-  { name: 'Kamal Muara', coordinates: [-6.103, 106.741], kecamatan: 'Penjaringan' },
-  { name: 'Kapuk Muara', coordinates: [-6.118, 106.766], kecamatan: 'Penjaringan' },
-  { name: 'Penjaringan', coordinates: [-6.131, 106.790], kecamatan: 'Penjaringan' },
-  { name: 'Pluit', coordinates: [-6.120, 106.792], kecamatan: 'Penjaringan' },
-  { name: 'Pejagalan', coordinates: [-6.142, 106.785], kecamatan: 'Penjaringan' },
+  // Areas near Pos Krukut Hulu
+  { name: 'Kelurahan Krukut', coordinates: [-6.340, 106.795], kecamatan: 'Limo', nearWatergate: 'Pos Krukut Hulu' },
+  { name: 'Desa Cinere', coordinates: [-6.348, 106.802], kecamatan: 'Cinere', nearWatergate: 'Pos Krukut Hulu' },
 
-  // Tanjung Priok
-  { name: 'Kebon Bawang', coordinates: [-6.130, 106.879], kecamatan: 'Tanjung Priok' },
-  { name: 'Papanggo', coordinates: [-6.141, 106.870], kecamatan: 'Tanjung Priok' },
-  { name: 'Sungai Bambu', coordinates: [-6.137, 106.888], kecamatan: 'Tanjung Priok' },
-  { name: 'Tanjung Priok', coordinates: [-6.106, 106.880], kecamatan: 'Tanjung Priok' },
-  { name: 'Warakas', coordinates: [-6.122, 106.889], kecamatan: 'Tanjung Priok' },
+  // Areas near Pos Pesanggrahan
+  { name: 'Kelurahan Pesanggrahan', coordinates: [-6.395, 106.770], kecamatan: 'Pesanggrahan', nearWatergate: 'Pos Pesanggrahan' },
+  { name: 'Kelurahan Petukangan Utara', coordinates: [-6.400, 106.775], kecamatan: 'Pesanggrahan', nearWatergate: 'Pos Pesanggrahan' },
+
+  // Areas near Pos Angke Hulu
+  { name: 'Kelurahan Duri Kosambi', coordinates: [-6.215, 106.695], kecamatan: 'Cengkareng', nearWatergate: 'Pos Angke Hulu' },
+  { name: 'Kelurahan Kedaung Kali Angke', coordinates: [-6.220, 106.690], kecamatan: 'Cengkareng', nearWatergate: 'Pos Angke Hulu' },
+
+  // Areas near Waduk Pluit
+  { name: 'Kelurahan Pluit', coordinates: [-6.115, 106.798], kecamatan: 'Penjaringan', nearWatergate: 'Waduk Pluit' },
+  { name: 'Kelurahan Muara Baru', coordinates: [-6.120, 106.805], kecamatan: 'Penjaringan', nearWatergate: 'Waduk Pluit' },
+
+  // Areas near Pasar Ikan - Laut
+  { name: 'Kelurahan Penjaringan', coordinates: [-6.125, 106.812], kecamatan: 'Penjaringan', nearWatergate: 'Pasar Ikan - Laut' },
+  { name: 'Kelurahan Muara Angke', coordinates: [-6.130, 106.808], kecamatan: 'Penjaringan', nearWatergate: 'Pasar Ikan - Laut' },
+
+  // Areas near Pos Cipinang Hulu
+  { name: 'Kelurahan Cipinang', coordinates: [-6.230, 106.875], kecamatan: 'Pulogadung', nearWatergate: 'Pos Cipinang Hulu' },
+  { name: 'Kelurahan Cipinang Besar Selatan', coordinates: [-6.235, 106.880], kecamatan: 'Jatinegara', nearWatergate: 'Pos Cipinang Hulu' },
+
+  // Areas near Pos Sunter Hulu
+  { name: 'Kelurahan Sunter Agung', coordinates: [-6.160, 106.885], kecamatan: 'Tanjung Priok', nearWatergate: 'Pos Sunter Hulu' },
+  { name: 'Kelurahan Sunter Jaya', coordinates: [-6.165, 106.878], kecamatan: 'Tanjung Priok', nearWatergate: 'Pos Sunter Hulu' },
+
+  // Areas near Pulo Gadung
+  { name: 'Kelurahan Pulo Gadung', coordinates: [-6.190, 106.905], kecamatan: 'Pulo Gadung', nearWatergate: 'Pulo Gadung' },
+  { name: 'Kelurahan Jati', coordinates: [-6.195, 106.900], kecamatan: 'Pulo Gadung', nearWatergate: 'Pulo Gadung' },
 ];
