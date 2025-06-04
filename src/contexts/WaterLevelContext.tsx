@@ -25,7 +25,7 @@ export const WaterLevelProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [waterLevels, setWaterLevels] = useState<WaterLevelData>({});
   const [isRealTime, setIsRealTime] = useState(true);
 
-  // Initialize water levels for all watergates
+  // Initialize water levels for all watergates with correct IDs
   useEffect(() => {
     const watergateIds = [
       'bendung_katulampa',
@@ -44,7 +44,7 @@ export const WaterLevelProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     const initialLevels: WaterLevelData = {};
     watergateIds.forEach(id => {
-      initialLevels[id] = 2.0 + Math.random() * 1.0; // Random initial level
+      initialLevels[id] = 2.0 + Math.random() * 1.0; // Random initial level between 2.0-3.0m
     });
     setWaterLevels(initialLevels);
   }, []);
@@ -57,9 +57,9 @@ export const WaterLevelProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setWaterLevels(prev => {
         const updated = { ...prev };
         Object.keys(updated).forEach(id => {
-          // Add small random variation
+          // Add small random variation (-0.01 to +0.01 meters)
           const change = (Math.random() - 0.5) * 0.02;
-          updated[id] = Math.max(0.5, updated[id] + change);
+          updated[id] = Math.max(0.5, Math.min(4.0, updated[id] + change));
           updated[id] = Math.round(updated[id] * 100) / 100;
         });
         return updated;

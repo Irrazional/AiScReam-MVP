@@ -84,16 +84,18 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 
   // Get water level - use real-time data if available and in real-time mode
   const getWaterLevel = () => {
-    if (!isWatergate || !location.weather?.waterLevel) return null;
+    if (!isWatergate) return null;
     
     if (isRealTime && waterLevels[location.id]) {
       return waterLevels[location.id];
     }
     
-    return location.weather.waterLevel;
+    // For historical/predictive data, use static value from weather data
+    return location.weather?.waterLevel || null;
   };
 
   const waterLevel = getWaterLevel();
+  const showLiveIndicator = isWatergate && isRealTime && waterLevel;
 
   const getCardStyle = () => {
     const baseClasses = `relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] ${riskColors.bg} ${riskColors.border} border`;
@@ -185,15 +187,18 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                   </div>
                   <div className="flex-1">
                     <p className="text-[9px] text-blue-600 dark:text-blue-400 font-medium">
-                      Tinggi Air {isRealTime ? "Real-time" : "Historis"}
+                      Tinggi Air {showLiveIndicator ? "Real-time" : "Historis"}
                     </p>
                     <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
                       {waterLevel.toFixed(2)}m
                     </p>
                   </div>
-                  {isRealTime && (
-                    <div className="text-[8px] text-blue-500 dark:text-blue-400 font-medium">
-                      LIVE
+                  {showLiveIndicator && (
+                    <div className="flex items-center space-x-1">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="text-[8px] text-green-600 dark:text-green-400 font-bold">
+                        LIVE
+                      </div>
                     </div>
                   )}
                 </div>
