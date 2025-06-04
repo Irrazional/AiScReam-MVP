@@ -8,7 +8,9 @@ export const fetchWeatherData = async (
   latitude: number, 
   longitude: number, 
   dateTime?: Date,
-  locationType?: string
+  locationType?: string,
+  locationId?: string,
+  isRealTime?: boolean
 ): Promise<WeatherData> => {
   try {
     // Always try OpenWeatherMap first
@@ -21,15 +23,23 @@ export const fetchWeatherData = async (
       weatherData = await fetchFromOpenMeteo(latitude, longitude, dateTime);
     }
 
-    // Add artificial water level data for watergates
+    // Add water level data for watergates
     if (locationType === 'watergate') {
-      // Generate realistic water level based on flood risk and precipitation
-      const baseWaterLevel = 1.5 + (weatherData.floodRisk / 100) * 2; // 1.5-3.5m base range
-      const precipitationEffect = (weatherData.precipitation / 10) * 0.5; // 0-0.5m based on precipitation
-      const randomVariation = (Math.random() - 0.5) * 0.3; // ±0.15m random variation
-      
-      weatherData.waterLevel = Math.max(0.5, baseWaterLevel + precipitationEffect + randomVariation);
-      weatherData.waterLevel = Math.round(weatherData.waterLevel * 100) / 100; // Round to 2 decimal places
+      if (isRealTime) {
+        // For real-time, the water level will be managed by the context
+        // Set a placeholder that will be overridden by the context
+        weatherData.waterLevel = 0;
+      } else {
+        // For historical/predictive data, use static calculation
+        const baseWaterLevel = 1.5 + (weatherData.floodRisk / 100) * 2;
+        const precipitationEffect = (weatherData.precipitation / 10) * 0.5;
+        const staticVariation = locationId ? 
+          (locationId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 100) / 1000 :
+          Math.random() * 0.3;
+        
+        weatherData.waterLevel = Math.max(0.5, baseWaterLevel + precipitationEffect + staticVariation);
+        weatherData.waterLevel = Math.round(weatherData.waterLevel * 100) / 100;
+      }
     }
 
     return weatherData;
@@ -49,14 +59,20 @@ export const fetchWeatherData = async (
       weatherCode: mockWeatherCode,
     };
 
-    // Add artificial water level for watergates
+    // Add water level for watergates
     if (locationType === 'watergate') {
-      const baseWaterLevel = 1.5 + (mockRisk / 100) * 2;
-      const precipitationEffect = (weatherData.precipitation / 10) * 0.5;
-      const randomVariation = (Math.random() - 0.5) * 0.3;
-      
-      weatherData.waterLevel = Math.max(0.5, baseWaterLevel + precipitationEffect + randomVariation);
-      weatherData.waterLevel = Math.round(weatherData.waterLevel * 100) / 100;
+      if (isRealTime) {
+        weatherData.waterLevel = 0; // Will be overridden by context
+      } else {
+        const baseWaterLevel = 1.5 + (mockRisk / 100) * 2;
+        const precipitationEffect = (weatherData.precipitation / 10) * 0.5;
+        const staticVariation = locationId ? 
+          (locationId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % 100) / 1000 :
+          Math.random() * 0.3;
+        
+        weatherData.waterLevel = Math.max(0.5, baseWaterLevel + precipitationEffect + staticVariation);
+        weatherData.waterLevel = Math.round(weatherData.waterLevel * 100) / 100;
+      }
     }
 
     return weatherData;

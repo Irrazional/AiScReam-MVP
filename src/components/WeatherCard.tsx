@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   MapPin,
@@ -12,18 +11,23 @@ import {
 } from "lucide-react";
 import { LocationData } from "../types/weather";
 import { WeatherIcon } from "./WeatherIcon";
+import { useWaterLevel } from "../contexts/WaterLevelContext";
 
 interface WeatherCardProps {
   location: LocationData;
   isSelected: boolean;
   onSelect: () => void;
+  isRealTime: boolean;
 }
 
 export const WeatherCard: React.FC<WeatherCardProps> = ({
   location,
   isSelected,
   onSelect,
+  isRealTime,
 }) => {
+  const { waterLevels } = useWaterLevel();
+
   const getRiskColorScheme = (risk: number) => {
     if (risk >= 80)
       return {
@@ -77,6 +81,19 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const riskColors = location.weather
     ? getRiskColorScheme(location.weather.floodRisk)
     : getRiskColorScheme(0);
+
+  // Get water level - use real-time data if available and in real-time mode
+  const getWaterLevel = () => {
+    if (!isWatergate || !location.weather?.waterLevel) return null;
+    
+    if (isRealTime && waterLevels[location.id]) {
+      return waterLevels[location.id];
+    }
+    
+    return location.weather.waterLevel;
+  };
+
+  const waterLevel = getWaterLevel();
 
   const getCardStyle = () => {
     const baseClasses = `relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] ${riskColors.bg} ${riskColors.border} border`;
@@ -160,7 +177,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         {location.weather ? (
           <div className="space-y-1.5">
             {/* Water Level for Watergates */}
-            {isWatergate && location.weather.waterLevel && (
+            {isWatergate && waterLevel && (
               <div className="bg-blue-500/10 border border-blue-300 dark:border-blue-600 rounded-lg p-1.5 backdrop-blur-sm mb-2">
                 <div className="flex items-center space-x-1.5">
                   <div className="p-0.5 bg-blue-100 dark:bg-blue-900/30 rounded">
@@ -168,15 +185,17 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                   </div>
                   <div className="flex-1">
                     <p className="text-[9px] text-blue-600 dark:text-blue-400 font-medium">
-                      Tinggi Air Real-time
+                      Tinggi Air {isRealTime ? "Real-time" : "Historis"}
                     </p>
                     <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
-                      {location.weather.waterLevel}m
+                      {waterLevel.toFixed(2)}m
                     </p>
                   </div>
-                  <div className="text-[8px] text-blue-500 dark:text-blue-400 font-medium">
-                    LIVE
-                  </div>
+                  {isRealTime && (
+                    <div className="text-[8px] text-blue-500 dark:text-blue-400 font-medium">
+                      LIVE
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -5,6 +5,7 @@ import { FloodMap } from "../components/FloodMap";
 import { RadarMap } from "../components/RadarMap";
 import { Header } from "../components/Header";
 import { ThemeProvider } from "../components/ThemeProvider";
+import { WaterLevelProvider } from "../contexts/WaterLevelContext";
 import { LocationData, WeatherData } from "../types/weather";
 import { fetchWeatherData } from "../services/weatherService";
 import { jakartaUtaraVillages } from "../data/jakartaUtaraVillages";
@@ -108,21 +109,27 @@ const IndexContent = () => {
     })),
   ];
 
+  // Check if current time is within 5 minutes of now (considered real-time)
+  const isRealTime = Math.abs(new Date().getTime() - selectedDateTime.getTime()) < 5 * 60 * 1000;
+
   useEffect(() => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
         const weatherPromises = allLocations.map(async (location) => {
+          const locationId = location.name.toLowerCase().replace(/\s+/g, "_");
           const weather = await fetchWeatherData(
             location.coordinates[0],
             location.coordinates[1],
             selectedDateTime,
-            location.type
+            location.type,
+            locationId,
+            isRealTime
           );
           return {
             ...location,
             weather,
-            id: location.name.toLowerCase().replace(/\s+/g, "_"),
+            id: locationId,
           };
         });
 
@@ -136,7 +143,7 @@ const IndexContent = () => {
     };
 
     loadWeatherData();
-  }, [selectedDateTime]);
+  }, [selectedDateTime, isRealTime]);
 
   const sortedLocations = [...locations].sort((a, b) => {
     switch (sortBy) {
@@ -177,6 +184,7 @@ const IndexContent = () => {
           selectedLocation={selectedLocation}
           filters={filters}
           onFilterChange={setFilters}
+          isRealTime={isRealTime}
         />
         <div className="flex-1">
           {currentView === "basic" ? (
@@ -201,7 +209,9 @@ const IndexContent = () => {
 const Index = () => {
   return (
     <ThemeProvider>
-      <IndexContent />
+      <WaterLevelProvider>
+        <IndexContent />
+      </WaterLevelProvider>
     </ThemeProvider>
   );
 };
