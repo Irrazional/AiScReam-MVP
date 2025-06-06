@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { LocationData } from "../types/weather";
 import { WeatherCard } from "./WeatherCard";
 import { LocationFilter, FilterOptions } from "./LocationFilter";
-import { ArrowUpDown, Menu, X } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
 
@@ -30,6 +31,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   isRealTime,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const watergateCount = locations.filter(
     (location) => location.type === "watergate"
@@ -45,6 +47,44 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
       return filters.showVillages;
     }
   });
+
+  // Sort locations based on selected criteria and direction
+  const sortedLocations = [...filteredLocations].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case "risk":
+        comparison = (a.weather?.floodRisk || 0) - (b.weather?.floodRisk || 0);
+        break;
+      case "temperature":
+        comparison = (a.weather?.temperature || 0) - (b.weather?.temperature || 0);
+        break;
+      default: // name
+        comparison = a.name.localeCompare(b.name);
+        break;
+    }
+    
+    return sortDirection === "desc" ? -comparison : comparison;
+  });
+
+  const handleSortChange = (newSortBy: "name" | "risk" | "temperature") => {
+    if (newSortBy === sortBy) {
+      // Toggle direction if same sort criteria
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // New sort criteria, default to ascending
+      onSortChange(newSortBy);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = () => {
+    if (sortDirection === "asc") {
+      return <ArrowUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+    } else {
+      return <ArrowDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+    }
+  };
 
   const sidebarContent = (
     <>
@@ -70,19 +110,39 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
           villageCount={villageCount}
         />
 
-        <div className="flex items-center space-x-2 mt-3 md:mt-4">
-          <ArrowUpDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              onSortChange(e.target.value as "name" | "risk" | "temperature")
-            }
-            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="risk">Sort by Flood Risk</option>
-            <option value="temperature">Sort by Temperature</option>
-          </select>
+        <div className="mt-3 md:mt-4">
+          <div className="flex items-center space-x-2 mb-2">
+            {getSortIcon()}
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Sort by:
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={sortBy === "name" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSortChange("name")}
+              className="text-xs"
+            >
+              Name
+            </Button>
+            <Button
+              variant={sortBy === "risk" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSortChange("risk")}
+              className="text-xs"
+            >
+              Flood Risk
+            </Button>
+            <Button
+              variant={sortBy === "temperature" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSortChange("temperature")}
+              className="text-xs"
+            >
+              Temperature
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -98,7 +158,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
           </div>
         ) : (
           <div className="p-2 md:p-3 space-y-2 md:space-y-3">
-            {filteredLocations.map((location) => (
+            {sortedLocations.map((location) => (
               <WeatherCard
                 key={location.id}
                 location={location}

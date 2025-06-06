@@ -1,10 +1,10 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LocationData } from "../types/weather";
 import { RealTimeStats } from "./RealTimeStats";
 import { Button } from "./ui/button";
+import { useTheme } from "./ThemeProvider";
 
 interface RadarMapProps {
   locations: LocationData[];
@@ -21,6 +21,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const weatherLayersRef = useRef<L.TileLayer[]>([]);
+  const baseLayerRef = useRef<L.TileLayer | null>(null);
   const [openWeatherKey, setOpenWeatherKey] = useState<string>(() => {
     return localStorage.getItem("openweather-api-key") || "";
   });
@@ -29,6 +30,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   >("precipitation");
   const [isLoading, setIsLoading] = useState(false);
   const [showRealTimeStats, setShowRealTimeStats] = useState(false);
+  const { theme } = useTheme();
 
   const getRiskColor = (risk: number) => {
     if (risk >= 80) return "#ef4444";
@@ -77,6 +79,30 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       iconAnchor: [size / 2, size / 2],
     });
   };
+
+  // Update base layer based on theme
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (baseLayerRef.current) {
+      mapInstanceRef.current.removeLayer(baseLayerRef.current);
+    }
+
+    const tileUrl = theme === 'dark' 
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    
+    const attribution = theme === 'dark'
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+    baseLayerRef.current = L.tileLayer(tileUrl, {
+      attribution,
+      maxZoom: 16,
+    });
+
+    baseLayerRef.current.addTo(mapInstanceRef.current);
+  }, [theme]);
 
   const addWeatherLayer = (
     layerType: "precipitation" | "temperature" | "wind" | "pressure"
@@ -165,13 +191,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       minZoom: 9,
       maxZoom: 16,
     }).setView([-6.35, 106.82], 10); // Centered to cover all locations
-
-    // Base layer
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 16,
-    }).addTo(map);
 
     if (mapRef.current) {
       mapRef.current.style.zIndex = "1";
@@ -304,24 +323,24 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-4 shadow-lg z-20">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-20">
           <div className="flex items-center space-x-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            <span className="text-gray-700">Loading weather data...</span>
+            <span className="text-gray-700 dark:text-gray-300">Loading weather data...</span>
           </div>
         </div>
       )}
 
       {/* Layer Control */}
-      <div className="absolute top-6 right-6 bg-white rounded-xl p-4 shadow-lg border border-gray-200 z-10">
-        <h4 className="text-gray-900 font-semibold mb-3">Layer Cuaca</h4>
+      <div className="absolute top-6 right-6 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+        <h4 className="text-gray-900 dark:text-white font-semibold mb-3">Layer Cuaca</h4>
         <div className="space-y-2">
           <button
             onClick={() => setActiveLayer("precipitation")}
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeLayer === "precipitation"
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             Curah Hujan
@@ -331,7 +350,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeLayer === "temperature"
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             Suhu
@@ -341,7 +360,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeLayer === "wind"
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             Angin
@@ -351,7 +370,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeLayer === "pressure"
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             Tekanan
@@ -359,7 +378,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-200 my-4"></div>
+        <div className="border-t border-gray-200 dark:border-gray-600 my-4"></div>
 
         {/* Real-time Stats Button */}
         <button
@@ -371,13 +390,13 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         </button>
 
         {/* API Key management */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={() => {
               localStorage.removeItem("openweather-api-key");
               setOpenWeatherKey("");
             }}
-            className="w-full text-xs text-gray-500 hover:text-gray-700 py-2"
+            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2"
           >
             Reset API Key
           </button>
@@ -385,47 +404,47 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-6 left-6 bg-white rounded-xl p-5 shadow-lg border border-gray-200 z-10">
-        <h4 className="text-gray-900 font-semibold mb-4">
+      <div className="absolute bottom-6 left-6 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">
           Tingkat Risiko Banjir
         </h4>
         <div className="space-y-3 mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-gray-700 text-sm">Risiko Tinggi (80%+)</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Tinggi (80%+)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-            <span className="text-gray-700 text-sm">
+            <span className="text-gray-700 dark:text-gray-300 text-sm">
               Risiko Sedang (60-79%)
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-gray-700 text-sm">
+            <span className="text-gray-700 dark:text-gray-300 text-sm">
               Risiko Rendah (40-59%)
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-gray-700 text-sm">
+            <span className="text-gray-700 dark:text-gray-300 text-sm">
               Risiko Minimal (0-39%)
             </span>
           </div>
         </div>
 
-        <h4 className="text-gray-900 font-semibold mb-4">Jenis Lokasi</h4>
+        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <div
               className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45"
               style={{ borderRadius: "50% 50% 50% 0%" }}
             ></div>
-            <span className="text-gray-700 text-sm">Pintu Air</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Pintu Air</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
-            <span className="text-gray-700 text-sm">Daerah</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Daerah</span>
           </div>
         </div>
       </div>

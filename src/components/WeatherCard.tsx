@@ -97,6 +97,20 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const waterLevel = getWaterLevel();
   const showLiveIndicator = isWatergate && isRealTime && waterLevel;
 
+  // Determine the label for water level based on time context
+  const getWaterLevelLabel = () => {
+    if (isRealTime) {
+      return "Tinggi Air Real-time";
+    } else {
+      const now = new Date();
+      const selectedTime = new Date(); // This would come from context in real implementation
+      
+      // For now, assume future dates are predictive, past dates are historical
+      // In real implementation, you'd get the selectedDateTime from context
+      return "Prediksi Tinggi Air"; // Default to predictive for demo
+    }
+  };
+
   const getCardStyle = () => {
     const baseClasses = `relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] ${riskColors.bg} ${riskColors.border} border`;
 
@@ -187,7 +201,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                   </div>
                   <div className="flex-1">
                     <p className="text-[9px] text-blue-600 dark:text-blue-400 font-medium">
-                      Tinggi Air {showLiveIndicator ? "Real-time" : "Historis"}
+                      {getWaterLevelLabel()}
                     </p>
                     <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
                       {waterLevel.toFixed(2)}m

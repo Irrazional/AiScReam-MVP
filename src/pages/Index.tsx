@@ -145,17 +145,6 @@ const IndexContent = () => {
     loadWeatherData();
   }, [selectedDateTime, isRealTime]);
 
-  const sortedLocations = [...locations].sort((a, b) => {
-    switch (sortBy) {
-      case "risk":
-        return (b.weather?.floodRisk || 0) - (a.weather?.floodRisk || 0);
-      case "temperature":
-        return (b.weather?.temperature || 0) - (a.weather?.temperature || 0);
-      default:
-        return a.name.localeCompare(b.name);
-    }
-  });
-
   // Filter locations for the map based on current filters
   const filteredMapLocations = locations.filter((location) => {
     if (location.type === "watergate") {
@@ -176,7 +165,7 @@ const IndexContent = () => {
       <div className="flex h-[calc(100vh-80px)]">
         {/* <ForecastForm /> button to fetch forecast */}
         <WeatherSidebar
-          locations={sortedLocations}
+          locations={locations}
           loading={loading}
           sortBy={sortBy}
           onSortChange={setSortBy}
