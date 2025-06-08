@@ -123,31 +123,29 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     });
     weatherLayersRef.current = [];
 
-    let layerCode = "";
+    let weatherUrl = "";
+    
     switch (layerType) {
       case "precipitation":
-        layerCode = "PA0"; // Convective precipitation
+        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}`;
         break;
       case "temperature":
-        layerCode = "TA2"; // Air temperature at 2 meters
+        weatherUrl = `http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.6&palette=-65:821692;-55:821692;-45:821692;-40:821692;-30:8257db;-20:208cec;-10:20c4e8;0:23dddd;10:c2ff28;20:fff028;25:ffc228;30:fc8014`;
         break;
       case "wind":
-        layerCode = "WND"; // Wind speed and direction
+        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
         break;
       case "pressure":
-        layerCode = "APM"; // Atmospheric pressure on mean sea level
+        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/APM/{z}/{x}/{y}?appid=${openWeatherKey}`;
         break;
     }
 
-    const weatherLayer = L.tileLayer(
-      `https://maps.openweathermap.org/maps/2.0/weather/${layerCode}/{z}/{x}/{y}?appid=${openWeatherKey}`,
-      {
-        maxZoom: 16,
-        opacity: 0.6,
-        attribution:
-          '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
-      }
-    );
+    const weatherLayer = L.tileLayer(weatherUrl, {
+      maxZoom: 16,
+      opacity: layerType === "temperature" ? 1 : 0.6, // Use full opacity for temperature since it's already set in URL
+      attribution:
+        '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
+    });
 
     weatherLayer.on("loading", () => {
       console.log("Weather layer loading...");
