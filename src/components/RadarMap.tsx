@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LocationData } from "../types/weather";
@@ -40,7 +39,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     return "#22c55e";
   };
 
-  const createWatergateIcon = (color: string, isSelected: boolean = false) => {
+  const createWatergateIcon = useCallback((color: string, isSelected: boolean = false) => {
     const size = isSelected ? 28 : 22;
     return L.divIcon({
       className: "custom-watergate-marker",
@@ -61,9 +60,9 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
     });
-  };
+  }, []);
 
-  const createVillageIcon = (color: string, isSelected: boolean = false) => {
+  const createVillageIcon = useCallback((color: string, isSelected: boolean = false) => {
     const size = isSelected ? 24 : 18;
     return L.divIcon({
       className: "custom-village-marker",
@@ -79,15 +78,11 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
     });
-  };
+  }, []);
 
-  // Update base layer based on theme
-  useEffect(() => {
+  // Optimized base layer update with caching
+  const updateBaseLayer = useCallback(() => {
     if (!mapInstanceRef.current) return;
-
-    if (baseLayerRef.current) {
-      mapInstanceRef.current.removeLayer(baseLayerRef.current);
-    }
 
     const tileUrl = theme === 'dark' 
       ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -97,6 +92,15 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
+    // Only update if the URL actually changed
+    if (baseLayerRef.current) {
+      const currentUrl = (baseLayerRef.current as any)._url;
+      if (currentUrl && currentUrl.includes(theme === 'dark' ? 'cartocdn' : 'openstreetmap')) {
+        return; // No change needed
+      }
+      mapInstanceRef.current.removeLayer(baseLayerRef.current);
+    }
+
     baseLayerRef.current = L.tileLayer(tileUrl, {
       attribution,
       maxZoom: 16,
@@ -105,34 +109,33 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     baseLayerRef.current.addTo(mapInstanceRef.current);
   }, [theme]);
 
-  const addWeatherLayer = (
+  // Optimized weather layer addition with better error handling
+  const addWeatherLayer = useCallback((
     layerType: "precipitation" | "temperature" | "wind" | "pressure"
   ) => {
     if (!mapInstanceRef.current || !openWeatherKey) return;
 
-    console.log(
-      "Adding weather layer:",
-      layerType,
-      "with API key:",
-      openWeatherKey.substring(0, 8) + "..."
-    );
+    console.log("Adding weather layer:", layerType);
     setIsLoading(true);
 
-    // Remove existing weather layers
-    weatherLayersRef.current.forEach((layer) => {
-      mapInstanceRef.current?.removeLayer(layer);
-    });
-    weatherLayersRef.current = [];
+    // Clear existing weather layers efficiently
+    if (weatherLayersRef.current.length > 0) {
+      weatherLayersRef.current.forEach((layer) => {
+        mapInstanceRef.current?.removeLayer(layer);
+      });
+      weatherLayersRef.current = [];
+    }
 
     let weatherUrl = "";
+    let opacity = 0.6;
     
     switch (layerType) {
       case "precipitation":
         weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}`;
         break;
       case "temperature":
-        // Using temperature heatmap with better visualization
         weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.7&palette=0:0000ff;10:00ffff;20:00ff00;30:ffff00;40:ff0000`;
+        opacity = 0.8;
         break;
       case "wind":
         weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
@@ -144,45 +147,50 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
     const weatherLayer = L.tileLayer(weatherUrl, {
       maxZoom: 16,
-      opacity: layerType === "temperature" ? 0.8 : 0.6, // Slightly higher opacity for temperature heatmap
-      attribution:
-        '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
+      opacity,
+      attribution: '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
     });
 
-    weatherLayer.on("loading", () => {
-      console.log("Weather layer loading...");
-    });
+    let loadTimeout: NodeJS.Timeout;
 
-    weatherLayer.on("load", () => {
+    const handleLoad = () => {
       console.log("Weather layer loaded successfully");
       setIsLoading(false);
-    });
+      if (loadTimeout) clearTimeout(loadTimeout);
+    };
 
-    weatherLayer.on("tileerror", (e) => {
-      console.error("Weather layer tile error:", e);
+    const handleError = (e: any) => {
+      console.error("Weather layer error:", e);
       setIsLoading(false);
-    });
+      if (loadTimeout) clearTimeout(loadTimeout);
+    };
+
+    weatherLayer.on("load", handleLoad);
+    weatherLayer.on("tileerror", handleError);
+
+    // Set a reasonable timeout for loading
+    loadTimeout = setTimeout(() => {
+      console.log("Weather layer load timeout");
+      setIsLoading(false);
+    }, 5000);
 
     weatherLayer.addTo(mapInstanceRef.current);
     weatherLayersRef.current.push(weatherLayer);
+  }, [openWeatherKey]);
 
-    // Set loading to false after a timeout as backup
-    setTimeout(() => setIsLoading(false), 3000);
-  };
-
-  const handleApiKeySubmit = (key: string) => {
+  const handleApiKeySubmit = useCallback((key: string) => {
     console.log("Setting API key:", key.substring(0, 8) + "...");
     setOpenWeatherKey(key);
     localStorage.setItem("openweather-api-key", key);
-  };
+  }, []);
 
+  // Initialize map only once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Expanded bounds to cover the new area from Bogor to Jakarta
     const expandedBounds = L.latLngBounds(
-      L.latLng(-6.7, 106.6), // Southwest coordinates (further south to include Bogor)
-      L.latLng(-6.0, 107.0)  // Northeast coordinates
+      L.latLng(-6.7, 106.6),
+      L.latLng(-6.0, 107.0)
     );
 
     const map = L.map(mapRef.current, {
@@ -190,7 +198,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       maxBoundsViscosity: 1.0,
       minZoom: 9,
       maxZoom: 16,
-    }).setView([-6.35, 106.82], 10); // Centered to cover all locations
+    }).setView([-6.35, 106.82], 10);
 
     if (mapRef.current) {
       mapRef.current.style.zIndex = "1";
@@ -206,13 +214,19 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     };
   }, []);
 
+  // Update base layer when theme changes
+  useEffect(() => {
+    updateBaseLayer();
+  }, [updateBaseLayer]);
+
+  // Update weather layer when key or active layer changes
   useEffect(() => {
     if (openWeatherKey) {
-      console.log("API key available, adding weather layer...");
       addWeatherLayer(activeLayer);
     }
-  }, [openWeatherKey, activeLayer]);
+  }, [openWeatherKey, activeLayer, addWeatherLayer]);
 
+  // Update markers efficiently
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -262,7 +276,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation, onLocationSelect]);
+  }, [locations, selectedLocation, onLocationSelect, createWatergateIcon, createVillageIcon]);
 
   if (!openWeatherKey) {
     return (
@@ -321,7 +335,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         <RealTimeStats onClose={() => setShowRealTimeStats(false)} />
       )}
 
-      {/* Loading indicator */}
+      {/* Optimized Loading indicator */}
       {isLoading && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-20">
           <div className="flex items-center space-x-3">
@@ -331,7 +345,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         </div>
       )}
 
-      {/* Layer Control */}
       <div className="absolute top-6 right-6 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
         <h4 className="text-gray-900 dark:text-white font-semibold mb-3">Layer Cuaca</h4>
         <div className="space-y-2">
@@ -377,10 +390,8 @@ export const RadarMap: React.FC<RadarMapProps> = ({
           </button>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-gray-200 dark:border-gray-600 my-4"></div>
 
-        {/* Real-time Stats Button */}
         <button
           onClick={() => setShowRealTimeStats(true)}
           className="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
@@ -389,7 +400,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
           <span>Real Time Statistik</span>
         </button>
 
-        {/* API Key management */}
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={() => {
@@ -403,7 +413,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         </div>
       </div>
 
-      {/* Legend */}
       <div className="absolute bottom-6 left-6 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
         <h4 className="text-gray-900 dark:text-white font-semibold mb-4">
           Tingkat Risiko Banjir
@@ -433,7 +442,6 @@ export const RadarMap: React.FC<RadarMapProps> = ({
           </div>
         </div>
 
-        {/* Temperature Heatmap Legend */}
         {activeLayer === "temperature" && (
           <div className="mb-6">
             <h4 className="text-gray-900 dark:text-white font-semibold mb-3">
