@@ -1,10 +1,23 @@
+
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LocationData } from "../types/weather";
 import { RealTimeStats } from "./RealTimeStats";
-import { Button } from "./ui/button";
 import { useTheme } from "./ThemeProvider";
+import { ApiKeyInput } from "./RadarMap/ApiKeyInput";
+import { WeatherControls } from "./RadarMap/WeatherControls";
+import { MapLegend } from "./RadarMap/MapLegend";
+import { 
+  WeatherLayerType, 
+  createWeatherLayer, 
+  createBaseLayer 
+} from "./RadarMap/weatherLayers";
+import { 
+  getRiskColor, 
+  createWatergateIcon, 
+  createVillageIcon 
+} from "./RadarMap/mapUtils";
 
 interface RadarMapProps {
   locations: LocationData[];
@@ -25,72 +38,14 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const [openWeatherKey, setOpenWeatherKey] = useState<string>(() => {
     return localStorage.getItem("openweather-api-key") || "";
   });
-  const [activeLayer, setActiveLayer] = useState<
-    "precipitation" | "temperature" | "wind" | "pressure"
-  >("precipitation");
+  const [activeLayer, setActiveLayer] = useState<WeatherLayerType>("precipitation");
   const [isLoading, setIsLoading] = useState(false);
   const [showRealTimeStats, setShowRealTimeStats] = useState(false);
   const { theme } = useTheme();
 
-  const getRiskColor = (risk: number) => {
-    if (risk >= 80) return "#ef4444";
-    if (risk >= 60) return "#f97316";
-    if (risk >= 40) return "#eab308";
-    return "#22c55e";
-  };
-
-  const createWatergateIcon = useCallback((color: string, isSelected: boolean = false) => {
-    const size = isSelected ? 28 : 22;
-    return L.divIcon({
-      className: "custom-watergate-marker",
-      html: `<div style="
-        width: ${size}px; 
-        height: ${size}px; 
-        background-color: ${color}; 
-        border: 3px solid #2563eb; 
-        border-radius: 50% 50% 50% 0%;
-        transform: rotate(-45deg);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-        ${
-          isSelected
-            ? "transform: rotate(-45deg) scale(1.2); border-width: 4px;"
-            : ""
-        }
-      "></div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  }, []);
-
-  const createVillageIcon = useCallback((color: string, isSelected: boolean = false) => {
-    const size = isSelected ? 24 : 18;
-    return L.divIcon({
-      className: "custom-village-marker",
-      html: `<div style="
-        width: ${size}px; 
-        height: ${size}px; 
-        background-color: ${color}; 
-        border: 3px solid #059669; 
-        border-radius: 4px; 
-        box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-        ${isSelected ? "transform: scale(1.2); border-width: 4px;" : ""}
-      "></div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  }, []);
-
   // Optimized base layer update with caching
   const updateBaseLayer = useCallback(() => {
     if (!mapInstanceRef.current) return;
-
-    const tileUrl = theme === 'dark' 
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    
-    const attribution = theme === 'dark'
-      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
     // Only update if the URL actually changed
     if (baseLayerRef.current) {
@@ -101,18 +56,12 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       mapInstanceRef.current.removeLayer(baseLayerRef.current);
     }
 
-    baseLayerRef.current = L.tileLayer(tileUrl, {
-      attribution,
-      maxZoom: 16,
-    });
-
+    baseLayerRef.current = createBaseLayer(theme);
     baseLayerRef.current.addTo(mapInstanceRef.current);
   }, [theme]);
 
   // Optimized weather layer addition with better error handling
-  const addWeatherLayer = useCallback((
-    layerType: "precipitation" | "temperature" | "wind" | "pressure"
-  ) => {
+  const addWeatherLayer = useCallback((layerType: WeatherLayerType) => {
     if (!mapInstanceRef.current || !openWeatherKey) return;
 
     console.log("Adding weather layer:", layerType);
@@ -126,30 +75,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       weatherLayersRef.current = [];
     }
 
-    let weatherUrl = "";
-    let opacity = 0.6;
-    
-    switch (layerType) {
-      case "precipitation":
-        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}`;
-        break;
-      case "temperature":
-        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.7&palette=0:0000ff;10:00ffff;20:00ff00;30:ffff00;40:ff0000`;
-        opacity = 0.8;
-        break;
-      case "wind":
-        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
-        break;
-      case "pressure":
-        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/APM/{z}/{x}/{y}?appid=${openWeatherKey}`;
-        break;
-    }
-
-    const weatherLayer = L.tileLayer(weatherUrl, {
-      maxZoom: 16,
-      opacity,
-      attribution: '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
-    });
+    const weatherLayer = createWeatherLayer(layerType, openWeatherKey);
 
     let loadTimeout: NodeJS.Timeout;
 
@@ -182,6 +108,11 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     console.log("Setting API key:", key.substring(0, 8) + "...");
     setOpenWeatherKey(key);
     localStorage.setItem("openweather-api-key", key);
+  }, []);
+
+  const handleResetApiKey = useCallback(() => {
+    localStorage.removeItem("openweather-api-key");
+    setOpenWeatherKey("");
   }, []);
 
   // Initialize map only once
@@ -276,54 +207,10 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation, onLocationSelect, createWatergateIcon, createVillageIcon]);
+  }, [locations, selectedLocation, onLocationSelect]);
 
   if (!openWeatherKey) {
-    return (
-      <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-xl max-w-md">
-          <h3 className="text-gray-900 font-semibold mb-4">
-            OpenWeatherMap API Key Required
-          </h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Please enter your OpenWeatherMap API key to display the radar map.
-            You can get one for free at{" "}
-            <a
-              href="https://openweathermap.org/api"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
-              openweathermap.org
-            </a>
-          </p>
-          <input
-            type="text"
-            placeholder="Enter OpenWeatherMap API Key"
-            defaultValue="5ba2d8c0aa9c463b17bcd00fc60c7bed"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                handleApiKeySubmit((e.target as HTMLInputElement).value);
-              }
-            }}
-          />
-          <Button
-            onClick={() => {
-              const input = document.querySelector(
-                'input[placeholder="Enter OpenWeatherMap API Key"]'
-              ) as HTMLInputElement;
-              if (input?.value) {
-                handleApiKeySubmit(input.value);
-              }
-            }}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          >
-            Load Radar Map
-          </Button>
-        </div>
-      </div>
-    );
+    return <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />;
   }
 
   return (
@@ -335,7 +222,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         <RealTimeStats onClose={() => setShowRealTimeStats(false)} />
       )}
 
-      {/* Optimized Loading indicator */}
+      {/* Loading indicator */}
       {isLoading && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-20">
           <div className="flex items-center space-x-3">
@@ -345,148 +232,14 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         </div>
       )}
 
-      <div className="absolute top-6 right-6 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-3">Layer Cuaca</h4>
-        <div className="space-y-2">
-          <button
-            onClick={() => setActiveLayer("precipitation")}
-            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeLayer === "precipitation"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Curah Hujan
-          </button>
-          <button
-            onClick={() => setActiveLayer("temperature")}
-            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeLayer === "temperature"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Suhu (Heatmap)
-          </button>
-          <button
-            onClick={() => setActiveLayer("wind")}
-            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeLayer === "wind"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Angin
-          </button>
-          <button
-            onClick={() => setActiveLayer("pressure")}
-            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeLayer === "pressure"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Tekanan
-          </button>
-        </div>
+      <WeatherControls
+        activeLayer={activeLayer}
+        onLayerChange={setActiveLayer}
+        onShowRealTimeStats={() => setShowRealTimeStats(true)}
+        onResetApiKey={handleResetApiKey}
+      />
 
-        <div className="border-t border-gray-200 dark:border-gray-600 my-4"></div>
-
-        <button
-          onClick={() => setShowRealTimeStats(true)}
-          className="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-        >
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-          <span>Real Time Statistik</span>
-        </button>
-
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-          <button
-            onClick={() => {
-              localStorage.removeItem("openweather-api-key");
-              setOpenWeatherKey("");
-            }}
-            className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 py-2"
-          >
-            Reset API Key
-          </button>
-        </div>
-      </div>
-
-      <div className="absolute bottom-6 left-6 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">
-          Tingkat Risiko Banjir
-        </h4>
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Tinggi (80%+)</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">
-              Risiko Sedang (60-79%)
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">
-              Risiko Rendah (40-59%)
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">
-              Risiko Minimal (0-39%)
-            </span>
-          </div>
-        </div>
-
-        {activeLayer === "temperature" && (
-          <div className="mb-6">
-            <h4 className="text-gray-900 dark:text-white font-semibold mb-3">
-              Skala Suhu
-            </h4>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">0°C - Dingin</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full bg-cyan-400"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">10°C - Sejuk</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">20°C - Normal</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">30°C - Hangat</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-gray-700 dark:text-gray-300 text-sm">40°C+ - Panas</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3">
-            <div
-              className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45"
-              style={{ borderRadius: "50% 50% 50% 0%" }}
-            ></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Pintu Air</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Daerah</span>
-          </div>
-        </div>
-      </div>
+      <MapLegend activeLayer={activeLayer} />
     </div>
   );
 };
