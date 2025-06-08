@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LocationData } from '../types/weather';
+import { useTheme } from './ThemeProvider';
 
 interface FloodMapProps {
   locations: LocationData[];
@@ -18,7 +18,9 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [mapTilerKey, setMapTilerKey] = useState<string>('jNtUhxpPD0rde9ksHxlf');
+  const { theme } = useTheme();
 
   const getRiskColor = (risk: number) => {
     if (risk >= 80) return '#ef4444'; // red
@@ -64,27 +66,39 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     });
   };
 
+  // Update tile layer based on theme
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapTilerKey) return;
+
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    const mapStyle = theme === 'dark' ? 'dataviz-dark' : 'topo-v2';
+    
+    tileLayerRef.current = L.tileLayer(`https://api.maptiler.com/maps/${mapStyle}/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 16,
+    });
+
+    tileLayerRef.current.addTo(mapInstanceRef.current);
+  }, [theme, mapTilerKey]);
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize the map centered on Jakarta with restricted bounds
-    const jakartaBounds = L.latLngBounds(
-      L.latLng(-6.4, 106.6), // Southwest coordinates
-      L.latLng(-5.9, 107.1)  // Northeast coordinates
+    // Expanded bounds to cover the new area from Bogor to Jakarta
+    const expandedBounds = L.latLngBounds(
+      L.latLng(-6.7, 106.6), // Southwest coordinates (further south to include Bogor)
+      L.latLng(-6.0, 107.0)  // Northeast coordinates
     );
 
     const map = L.map(mapRef.current, {
-      maxBounds: jakartaBounds,
+      maxBounds: expandedBounds,
       maxBoundsViscosity: 1.0,
-      minZoom: 10,
+      minZoom: 9,
       maxZoom: 16
-    }).setView([-6.2, 106.85], 11);
-
-    // Use the new MapTiler topo style
-    L.tileLayer(`https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
-      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 16,
-    }).addTo(map);
+    }).setView([-6.35, 106.82], 10); // Centered to cover all locations
 
     // Set the map container z-index lower than popover
     if (mapRef.current) {
@@ -99,7 +113,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [mapTilerKey]);
+  }, []);
 
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -184,36 +198,36 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
       
       {/* Updated Legend with Indonesian terms */}
-      <div className="absolute bottom-6 left-6 bg-white rounded-xl p-5 shadow-lg border border-gray-200 z-10">
-        <h4 className="text-gray-900 font-semibold mb-4">Tingkat Risiko Banjir</h4>
+      <div className="absolute bottom-6 left-6 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Tingkat Risiko Banjir</h4>
         <div className="space-y-3 mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-gray-700 text-sm">Risiko Tinggi (80%+)</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Tinggi (80%+)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-            <span className="text-gray-700 text-sm">Risiko Sedang (60-79%)</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Sedang (60-79%)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-gray-700 text-sm">Risiko Rendah (40-59%)</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Rendah (40-59%)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-gray-700 text-sm">Risiko Minimal (0-39%)</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Minimal (0-39%)</span>
           </div>
         </div>
         
-        <h4 className="text-gray-900 font-semibold mb-4">Jenis Lokasi</h4>
+        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <div className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
-            <span className="text-gray-700 text-sm">Pintu Air</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Pintu Air</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
-            <span className="text-gray-700 text-sm">Daerah</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">Daerah</span>
           </div>
         </div>
       </div>

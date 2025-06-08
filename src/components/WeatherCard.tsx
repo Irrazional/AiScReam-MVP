@@ -7,21 +7,27 @@ import {
   AlertTriangle,
   Building2,
   CloudRain,
+  Waves,
 } from "lucide-react";
 import { LocationData } from "../types/weather";
 import { WeatherIcon } from "./WeatherIcon";
+import { useWaterLevel } from "../contexts/WaterLevelContext";
 
 interface WeatherCardProps {
   location: LocationData;
   isSelected: boolean;
   onSelect: () => void;
+  isRealTime: boolean;
 }
 
 export const WeatherCard: React.FC<WeatherCardProps> = ({
   location,
   isSelected,
   onSelect,
+  isRealTime,
 }) => {
+  const { waterLevels } = useWaterLevel();
+
   const getRiskColorScheme = (risk: number) => {
     if (risk >= 80)
       return {
@@ -75,6 +81,35 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const riskColors = location.weather
     ? getRiskColorScheme(location.weather.floodRisk)
     : getRiskColorScheme(0);
+
+  // Get water level - use real-time data if available and in real-time mode
+  const getWaterLevel = () => {
+    if (!isWatergate) return null;
+    
+    if (isRealTime && waterLevels[location.id]) {
+      return waterLevels[location.id];
+    }
+    
+    // For historical/predictive data, use static value from weather data
+    return location.weather?.waterLevel || null;
+  };
+
+  const waterLevel = getWaterLevel();
+  const showLiveIndicator = isWatergate && isRealTime && waterLevel;
+
+  // Determine the label for water level based on time context
+  const getWaterLevelLabel = () => {
+    if (isRealTime) {
+      return "Tinggi Air Real-time";
+    } else {
+      const now = new Date();
+      const selectedTime = new Date(); // This would come from context in real implementation
+      
+      // For now, assume future dates are predictive, past dates are historical
+      // In real implementation, you'd get the selectedDateTime from context
+      return "Prediksi Tinggi Air"; // Default to predictive for demo
+    }
+  };
 
   const getCardStyle = () => {
     const baseClasses = `relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] ${riskColors.bg} ${riskColors.border} border`;
@@ -157,6 +192,33 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 
         {location.weather ? (
           <div className="space-y-1.5">
+            {/* Water Level for Watergates */}
+            {isWatergate && waterLevel && (
+              <div className="bg-blue-500/10 border border-blue-300 dark:border-blue-600 rounded-lg p-1.5 backdrop-blur-sm mb-2">
+                <div className="flex items-center space-x-1.5">
+                  <div className="p-0.5 bg-blue-100 dark:bg-blue-900/30 rounded">
+                    <Waves className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[9px] text-blue-600 dark:text-blue-400 font-medium">
+                      {getWaterLevelLabel()}
+                    </p>
+                    <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                      {waterLevel.toFixed(2)}m
+                    </p>
+                  </div>
+                  {showLiveIndicator && (
+                    <div className="flex items-center space-x-1">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="text-[8px] text-green-600 dark:text-green-400 font-bold">
+                        LIVE
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-1.5">
               <div className="flex items-center space-x-1.5 bg-white/50 dark:bg-black/20 rounded-lg p-1.5 backdrop-blur-sm">
                 <div className="p-0.5 bg-red-100 dark:bg-red-900/30 rounded">

@@ -18,27 +18,27 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
         variant={currentView === 'basic' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewChange('basic')}
-        className={`flex items-center space-x-2 transition-all duration-200 ${
+        className={`flex items-center space-x-1 md:space-x-2 transition-all duration-200 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 ${
           currentView === 'basic' 
             ? 'bg-white text-blue-600 hover:bg-white/90' 
             : 'text-white hover:bg-white/20'
         }`}
       >
-        <Map className="w-4 h-4" />
-        <span>Sederhana</span>
+        <Map className="w-3 h-3 md:w-4 md:h-4" />
+        <span className="hidden sm:inline">Sederhana</span>
       </Button>
       <Button
         variant={currentView === 'advanced' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onViewChange('advanced')}
-        className={`flex items-center space-x-2 transition-all duration-200 ${
+        className={`flex items-center space-x-1 md:space-x-2 transition-all duration-200 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 ${
           currentView === 'advanced' 
             ? 'bg-white text-blue-600 hover:bg-white/90' 
             : 'text-white hover:bg-white/20'
         }`}
       >
-        <Radar className="w-4 h-4" />
-        <span>Detail</span>
+        <Radar className="w-3 h-3 md:w-4 md:h-4" />
+        <span className="hidden sm:inline">Detail</span>
       </Button>
     </div>
   );
