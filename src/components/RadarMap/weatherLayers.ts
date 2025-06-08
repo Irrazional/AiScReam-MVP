@@ -12,7 +12,9 @@ export const createWeatherLayer = (
   
   switch (layerType) {
     case "precipitation":
-      weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}`;
+      // Enhanced precipitation layer with better color palette for visibility
+      weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.8&palette=0:ffffff;1:87ceeb;10:4169e1;20:0000ff;50:8b00ff;100:ff0000`;
+      opacity = 0.8;
       break;
     case "temperature":
       weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.7&palette=0:0000ff;10:00ffff;20:00ff00;30:ffff00;40:ff0000`;
@@ -22,7 +24,9 @@ export const createWeatherLayer = (
       weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
       break;
     case "pressure":
-      weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/APM/{z}/{x}/{y}?appid=${openWeatherKey}`;
+      // Enhanced pressure layer with better color palette for visibility
+      weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/APM/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.8&palette=950:8b00ff;970:0000ff;990:00ff00;1010:ffff00;1030:ff7f00;1050:ff0000`;
+      opacity = 0.8;
       break;
   }
 

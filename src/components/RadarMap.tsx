@@ -41,28 +41,71 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const [activeLayer, setActiveLayer] = useState<WeatherLayerType>("precipitation");
   const [isLoading, setIsLoading] = useState(false);
   const [showRealTimeStats, setShowRealTimeStats] = useState(false);
+  const [mapInitialized, setMapInitialized] = useState(false);
   const { theme } = useTheme();
 
-  // Optimized base layer update with caching
-  const updateBaseLayer = useCallback(() => {
-    if (!mapInstanceRef.current) return;
+  // Initialize map and base layer together
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Only update if the URL actually changed
-    if (baseLayerRef.current) {
-      const currentUrl = (baseLayerRef.current as any)._url;
-      if (currentUrl && currentUrl.includes(theme === 'dark' ? 'cartocdn' : 'openstreetmap')) {
-        return; // No change needed
+    console.log("Initializing map with theme:", theme);
+
+    const expandedBounds = L.latLngBounds(
+      L.latLng(-6.7, 106.6),
+      L.latLng(-6.0, 107.0)
+    );
+
+    const map = L.map(mapRef.current, {
+      maxBounds: expandedBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 9,
+      maxZoom: 16,
+    }).setView([-6.35, 106.82], 10);
+
+    if (mapRef.current) {
+      mapRef.current.style.zIndex = "1";
+    }
+
+    mapInstanceRef.current = map;
+
+    // Add base layer immediately during initialization
+    baseLayerRef.current = createBaseLayer(theme);
+    baseLayerRef.current.addTo(map);
+
+    // Mark map as initialized after a short delay to ensure everything is ready
+    setTimeout(() => {
+      setMapInitialized(true);
+      console.log("Map initialization complete");
+    }, 100);
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        setMapInitialized(false);
       }
+    };
+  }, [theme]); // Include theme in dependency to reinitialize when theme changes
+
+  // Update base layer when theme changes (only after map is initialized)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapInitialized) return;
+
+    console.log("Updating base layer for theme:", theme);
+
+    // Remove existing base layer
+    if (baseLayerRef.current) {
       mapInstanceRef.current.removeLayer(baseLayerRef.current);
     }
 
+    // Add new base layer
     baseLayerRef.current = createBaseLayer(theme);
     baseLayerRef.current.addTo(mapInstanceRef.current);
-  }, [theme]);
+  }, [theme, mapInitialized]);
 
   // Optimized weather layer addition with better error handling
   const addWeatherLayer = useCallback((layerType: WeatherLayerType) => {
-    if (!mapInstanceRef.current || !openWeatherKey) return;
+    if (!mapInstanceRef.current || !openWeatherKey || !mapInitialized) return;
 
     console.log("Adding weather layer:", layerType);
     setIsLoading(true);
@@ -102,7 +145,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
     weatherLayer.addTo(mapInstanceRef.current);
     weatherLayersRef.current.push(weatherLayer);
-  }, [openWeatherKey]);
+  }, [openWeatherKey, mapInitialized]);
 
   const handleApiKeySubmit = useCallback((key: string) => {
     console.log("Setting API key:", key.substring(0, 8) + "...");
@@ -115,51 +158,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     setOpenWeatherKey("");
   }, []);
 
-  // Initialize map only once
+  // Update weather layer when key, active layer changes, or map is initialized
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
-
-    const expandedBounds = L.latLngBounds(
-      L.latLng(-6.7, 106.6),
-      L.latLng(-6.0, 107.0)
-    );
-
-    const map = L.map(mapRef.current, {
-      maxBounds: expandedBounds,
-      maxBoundsViscosity: 1.0,
-      minZoom: 9,
-      maxZoom: 16,
-    }).setView([-6.35, 106.82], 10);
-
-    if (mapRef.current) {
-      mapRef.current.style.zIndex = "1";
-    }
-
-    mapInstanceRef.current = map;
-
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, []);
-
-  // Update base layer when theme changes
-  useEffect(() => {
-    updateBaseLayer();
-  }, [updateBaseLayer]);
-
-  // Update weather layer when key or active layer changes
-  useEffect(() => {
-    if (openWeatherKey) {
+    if (openWeatherKey && mapInitialized) {
       addWeatherLayer(activeLayer);
     }
-  }, [openWeatherKey, activeLayer, addWeatherLayer]);
+  }, [openWeatherKey, activeLayer, addWeatherLayer, mapInitialized]);
 
   // Update markers efficiently
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapInstanceRef.current || !mapInitialized) return;
 
     // Clear existing markers
     markersRef.current.forEach((marker) => {
@@ -207,7 +215,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation, onLocationSelect]);
+  }, [locations, selectedLocation, onLocationSelect, mapInitialized]);
 
   if (!openWeatherKey) {
     return <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />;
@@ -223,11 +231,13 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       )}
 
       {/* Loading indicator */}
-      {isLoading && (
+      {(isLoading || !mapInitialized) && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-20">
           <div className="flex items-center space-x-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            <span className="text-gray-700 dark:text-gray-300">Loading weather data...</span>
+            <span className="text-gray-700 dark:text-gray-300">
+              {!mapInitialized ? "Initializing map..." : "Loading weather data..."}
+            </span>
           </div>
         </div>
       )}
