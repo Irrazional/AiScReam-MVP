@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -130,7 +131,8 @@ export const RadarMap: React.FC<RadarMapProps> = ({
         weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?appid=${openWeatherKey}`;
         break;
       case "temperature":
-        weatherUrl = `http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.6&palette=-65:821692;-55:821692;-45:821692;-40:821692;-30:8257db;-20:208cec;-10:20c4e8;0:23dddd;10:c2ff28;20:fff028;25:ffc228;30:fc8014`;
+        // Using temperature heatmap with better visualization
+        weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.7&palette=0:0000ff;10:00ffff;20:00ff00;30:ffff00;40:ff0000`;
         break;
       case "wind":
         weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
@@ -142,7 +144,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
     const weatherLayer = L.tileLayer(weatherUrl, {
       maxZoom: 16,
-      opacity: layerType === "temperature" ? 1 : 0.6, // Use full opacity for temperature since it's already set in URL
+      opacity: layerType === "temperature" ? 0.8 : 0.6, // Slightly higher opacity for temperature heatmap
       attribution:
         '&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>',
     });
@@ -351,7 +353,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
                 : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
-            Suhu
+            Suhu (Heatmap)
           </button>
           <button
             onClick={() => setActiveLayer("wind")}
@@ -430,6 +432,37 @@ export const RadarMap: React.FC<RadarMapProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Temperature Heatmap Legend */}
+        {activeLayer === "temperature" && (
+          <div className="mb-6">
+            <h4 className="text-gray-900 dark:text-white font-semibold mb-3">
+              Skala Suhu
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">0°C - Dingin</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-cyan-400"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">10°C - Sejuk</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">20°C - Normal</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">30°C - Hangat</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">40°C+ - Panas</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
         <div className="space-y-3">
