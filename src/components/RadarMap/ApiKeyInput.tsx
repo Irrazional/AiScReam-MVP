@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "../ui/button";
 
@@ -23,8 +22,8 @@ export const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
           OpenWeatherMap API Key Required
         </h3>
         <p className="text-gray-600 text-sm mb-4">
-          Please enter your OpenWeatherMap API key to display the radar map.
-          You can get one for free at{" "}
+          Please enter your OpenWeatherMap API key to display the radar map. You
+          can get one for free at{" "}
           <a
             href="https://openweathermap.org/api"
             target="_blank"
@@ -37,7 +36,7 @@ export const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ onApiKeySubmit }) => {
         <input
           type="text"
           placeholder="Enter OpenWeatherMap API Key"
-          defaultValue="5ba2d8c0aa9c463b17bcd00fc60c7bed"
+          defaultValue="dcc7e2506c9716b7029e68bcfff4c121"
           className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           onKeyPress={(e) => {
             if (e.key === "Enter") {
