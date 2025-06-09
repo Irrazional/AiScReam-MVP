@@ -3,6 +3,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LocationData } from '../types/weather';
 import { useTheme } from './ThemeProvider';
+import { createFloodHeatmap } from './FloodMap/floodHeatmap';
+import { HeatmapControls } from './FloodMap/HeatmapControls';
 
 interface FloodMapProps {
   locations: LocationData[];
@@ -18,8 +20,10 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const heatmapRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [mapTilerKey, setMapTilerKey] = useState<string>('jNtUhxpPD0rde9ksHxlf');
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const { theme } = useTheme();
 
   const getRiskColor = (risk: number) => {
@@ -115,6 +119,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     };
   }, []);
 
+  // Update markers/heatmap display
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -124,36 +129,48 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     });
     markersRef.current = [];
 
-    // Add new markers
-    locations.forEach((location) => {
-      if (!location.weather) return;
+    // Clear existing heatmap
+    if (heatmapRef.current) {
+      mapInstanceRef.current.removeLayer(heatmapRef.current);
+      heatmapRef.current = null;
+    }
 
-      const color = getRiskColor(location.weather.floodRisk);
-      const isSelected = selectedLocation?.id === location.id;
-      const isWatergate = location.type === 'watergate';
-      
-      const icon = isWatergate 
-        ? createWatergateIcon(color, isSelected)
-        : createVillageIcon(color, isSelected);
+    if (showHeatmap) {
+      // Show heatmap
+      heatmapRef.current = createFloodHeatmap(locations);
+      heatmapRef.current.addTo(mapInstanceRef.current);
+    } else {
+      // Show markers
+      locations.forEach((location) => {
+        if (!location.weather) return;
 
-      const marker = L.marker([location.coordinates[0], location.coordinates[1]], { icon })
-        .addTo(mapInstanceRef.current!)
-        .bindPopup(`
-          <div class="p-2">
-            <h3 class="font-medium text-gray-900">${location.name}</h3>
-            <p class="text-sm text-gray-600">Jenis: ${isWatergate ? 'Pintu Air' : 'Daerah'}</p>
-            <p class="text-sm text-gray-600">Risiko Banjir: ${location.weather.floodRisk}%</p>
-            <p class="text-sm text-gray-600">Suhu: ${location.weather.temperature}°C</p>
-            <p class="text-sm text-gray-600">${location.weather.description}</p>
-          </div>
-        `)
-        .on('click', () => {
-          onLocationSelect(location);
-        });
+        const color = getRiskColor(location.weather.floodRisk);
+        const isSelected = selectedLocation?.id === location.id;
+        const isWatergate = location.type === 'watergate';
+        
+        const icon = isWatergate 
+          ? createWatergateIcon(color, isSelected)
+          : createVillageIcon(color, isSelected);
 
-      markersRef.current.push(marker);
-    });
-  }, [locations, selectedLocation, onLocationSelect]);
+        const marker = L.marker([location.coordinates[0], location.coordinates[1]], { icon })
+          .addTo(mapInstanceRef.current!)
+          .bindPopup(`
+            <div class="p-2">
+              <h3 class="font-medium text-gray-900">${location.name}</h3>
+              <p class="text-sm text-gray-600">Jenis: ${isWatergate ? 'Pintu Air' : 'Daerah'}</p>
+              <p class="text-sm text-gray-600">Risiko Banjir: ${location.weather.floodRisk}%</p>
+              <p class="text-sm text-gray-600">Suhu: ${location.weather.temperature}°C</p>
+              <p class="text-sm text-gray-600">${location.weather.description}</p>
+            </div>
+          `)
+          .on('click', () => {
+            onLocationSelect(location);
+          });
+
+        markersRef.current.push(marker);
+      });
+    }
+  }, [locations, selectedLocation, onLocationSelect, showHeatmap]);
 
   if (!mapTilerKey) {
     return (
@@ -197,39 +214,89 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
       
-      {/* Updated Legend with Indonesian terms */}
+      <HeatmapControls 
+        showHeatmap={showHeatmap}
+        onToggleHeatmap={setShowHeatmap}
+      />
+      
+      {/* Updated Legend */}
       <div className="absolute bottom-6 left-6 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Tingkat Risiko Banjir</h4>
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Tinggi (80%+)</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Sedang (60-79%)</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Rendah (40-59%)</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Minimal (0-39%)</span>
-          </div>
-        </div>
-        
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Pintu Air</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
-            <span className="text-gray-700 dark:text-gray-300 text-sm">Daerah</span>
-          </div>
-        </div>
+        {showHeatmap ? (
+          <>
+            <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Heatmap Risiko Banjir</h4>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#dc2626' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Sangat Tinggi (80%+)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#ea580c' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Tinggi (70-79%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#f59e0b' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Sedang-Tinggi (60-69%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#eab308' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Sedang (50-59%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#84cc16' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Rendah-Sedang (40-49%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Rendah (30-39%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#16a34a' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Sangat Rendah (20-29%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: '#15803d' }}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Minimal (0-19%)</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Area dengan radius lebih besar menunjukkan risiko banjir yang lebih tinggi
+            </p>
+          </>
+        ) : (
+          <>
+            <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Tingkat Risiko Banjir</h4>
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Tinggi (80%+)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Sedang (60-79%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Rendah (40-59%)</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Risiko Minimal (0-39%)</span>
+              </div>
+            </div>
+            
+            <h4 className="text-gray-900 dark:text-white font-semibold mb-4">Jenis Lokasi</h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-5 h-5 bg-blue-500 border-2 border-blue-600 transform rotate-45" style={{borderRadius: '50% 50% 50% 0%'}}></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Pintu Air</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-4 h-4 bg-emerald-500 border-2 border-emerald-600 rounded-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300 text-sm">Daerah</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
