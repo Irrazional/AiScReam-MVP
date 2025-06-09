@@ -10,46 +10,55 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
 
     const floodRisk = location.weather.floodRisk;
     const [lat, lng] = location.coordinates;
+    const isWatergate = location.type === 'watergate';
 
-    // Create multiple overlapping circles for better blending
-    const baseRadius = 800;
-    const riskMultiplier = 1 + (floodRisk / 100) * 1.5;
+    // Larger base radius, with watergates being significantly bigger
+    const baseRadius = isWatergate ? 1800 : 1200; // Watergates 50% larger
+    const riskMultiplier = 1 + (floodRisk / 100) * 2; // Increased multiplier for more dramatic size changes
     
-    // Create 3 concentric circles for better gradient effect
+    // Create 4 concentric circles for even better gradient effect
     const circles = [
       {
+        radius: baseRadius * riskMultiplier * 1.5,
+        opacity: Math.max(0.08, (floodRisk / 100) * 0.15),
+        weight: 0
+      },
+      {
         radius: baseRadius * riskMultiplier * 1.2,
-        opacity: Math.max(0.15, (floodRisk / 100) * 0.3),
+        opacity: Math.max(0.15, (floodRisk / 100) * 0.25),
         weight: 0
       },
       {
         radius: baseRadius * riskMultiplier * 0.8,
-        opacity: Math.max(0.25, (floodRisk / 100) * 0.45),
+        opacity: Math.max(0.25, (floodRisk / 100) * 0.4),
         weight: 0
       },
       {
         radius: baseRadius * riskMultiplier * 0.4,
-        opacity: Math.max(0.4, (floodRisk / 100) * 0.6),
+        opacity: Math.max(0.4, (floodRisk / 100) * 0.7),
         weight: 1
       }
     ];
 
-    const color = getFloodRiskColor(floodRisk);
-    const strokeColor = getFloodRiskStrokeColor(floodRisk);
+    const color = getFloodRiskColor(floodRisk, isWatergate);
+    const strokeColor = getFloodRiskStrokeColor(floodRisk, isWatergate);
 
     // Create multiple circles for blending effect
     circles.forEach((circleConfig, index) => {
+      // Enhanced opacity for watergates to make them more prominent
+      const adjustedOpacity = isWatergate ? circleConfig.opacity * 1.3 : circleConfig.opacity;
+      
       const circle = L.circle([lat, lng], {
-        color: index === 2 ? strokeColor : color,
+        color: index === 3 ? strokeColor : color,
         fillColor: color,
-        fillOpacity: circleConfig.opacity,
+        fillOpacity: Math.min(0.8, adjustedOpacity), // Cap at 0.8 to prevent too solid colors
         weight: circleConfig.weight,
         radius: circleConfig.radius,
-        opacity: index === 2 ? 0.6 : 0.3
+        opacity: index === 3 ? (isWatergate ? 0.8 : 0.6) : (isWatergate ? 0.4 : 0.3)
       });
 
       // Only add popup to the center circle
-      if (index === 2) {
+      if (index === 3) {
         circle.bindPopup(`
           <div class="p-3">
             <h3 class="font-semibold text-gray-900 mb-2">${location.name}</h3>
@@ -57,6 +66,7 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
               <p class="text-sm"><span class="font-medium">Risiko Banjir:</span> ${floodRisk}%</p>
               <p class="text-sm"><span class="font-medium">Status:</span> ${getFloodRiskStatus(floodRisk)}</p>
               <p class="text-sm"><span class="font-medium">Jenis:</span> ${location.type === 'watergate' ? 'Pintu Air' : 'Daerah'}</p>
+              ${isWatergate ? '<p class="text-xs text-blue-600 font-medium mt-1">⚠️ Lokasi kritis untuk prediksi banjir</p>' : ''}
               <div class="mt-2 w-full h-2 bg-gray-200 rounded-full">
                 <div 
                   class="h-full rounded-full" 
@@ -75,32 +85,34 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
   return heatmapGroup;
 };
 
-const getFloodRiskColor = (risk: number): string => {
-  // More vibrant colors with better contrast
-  if (risk >= 90) return '#dc2626'; // bright red
-  if (risk >= 80) return '#ef4444'; // red
-  if (risk >= 70) return '#f97316'; // orange
-  if (risk >= 60) return '#f59e0b'; // amber
-  if (risk >= 50) return '#eab308'; // yellow
-  if (risk >= 40) return '#a3e635'; // lime
-  if (risk >= 30) return '#22c55e'; // green
-  if (risk >= 20) return '#16a34a'; // dark green
-  if (risk >= 10) return '#15803d'; // darker green
-  return '#166534'; // darkest green
+const getFloodRiskColor = (risk: number, isWatergate: boolean = false): string => {
+  // More vibrant colors with enhanced intensity for watergates
+  const colorIntensity = isWatergate ? 1.0 : 0.85; // Watergates get more intense colors
+  
+  if (risk >= 90) return isWatergate ? '#b91c1c' : '#dc2626'; // darker red for watergates
+  if (risk >= 80) return isWatergate ? '#dc2626' : '#ef4444'; 
+  if (risk >= 70) return isWatergate ? '#ea580c' : '#f97316'; 
+  if (risk >= 60) return isWatergate ? '#d97706' : '#f59e0b'; 
+  if (risk >= 50) return isWatergate ? '#ca8a04' : '#eab308'; 
+  if (risk >= 40) return isWatergate ? '#84cc16' : '#a3e635'; 
+  if (risk >= 30) return isWatergate ? '#16a34a' : '#22c55e'; 
+  if (risk >= 20) return isWatergate ? '#15803d' : '#16a34a'; 
+  if (risk >= 10) return isWatergate ? '#166534' : '#15803d'; 
+  return isWatergate ? '#14532d' : '#166534';
 };
 
-const getFloodRiskStrokeColor = (risk: number): string => {
-  // Darker stroke colors for better definition
-  if (risk >= 90) return '#991b1b'; // darker red
-  if (risk >= 80) return '#b91c1c'; // dark red
-  if (risk >= 70) return '#c2410c'; // dark orange
-  if (risk >= 60) return '#d97706'; // dark amber
-  if (risk >= 50) return '#ca8a04'; // dark yellow
-  if (risk >= 40) return '#65a30d'; // dark lime
-  if (risk >= 30) return '#16a34a'; // dark green
-  if (risk >= 20) return '#15803d'; // darker green
-  if (risk >= 10) return '#166534'; // darkest green
-  return '#14532d'; // very dark green
+const getFloodRiskStrokeColor = (risk: number, isWatergate: boolean = false): string => {
+  // Even darker stroke colors for better definition, especially for watergates
+  if (risk >= 90) return isWatergate ? '#7f1d1d' : '#991b1b'; 
+  if (risk >= 80) return isWatergate ? '#991b1b' : '#b91c1c'; 
+  if (risk >= 70) return isWatergate ? '#9a3412' : '#c2410c'; 
+  if (risk >= 60) return isWatergate ? '#b45309' : '#d97706'; 
+  if (risk >= 50) return isWatergate ? '#a16207' : '#ca8a04'; 
+  if (risk >= 40) return isWatergate ? '#4d7c0f' : '#65a30d'; 
+  if (risk >= 30) return isWatergate ? '#15803d' : '#16a34a'; 
+  if (risk >= 20) return isWatergate ? '#166534' : '#15803d'; 
+  if (risk >= 10) return isWatergate ? '#14532d' : '#166534'; 
+  return isWatergate ? '#052e16' : '#14532d';
 };
 
 const getFloodRiskStatus = (risk: number): string => {
