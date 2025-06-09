@@ -1,7 +1,7 @@
 
 import L from "leaflet";
 
-export type WeatherLayerType = "precipitation" | "temperature" | "wind" | "pressure";
+export type WeatherLayerType = "precipitation" | "temperature" | "wind";
 
 export const createWeatherLayer = (
   layerType: WeatherLayerType,
@@ -22,11 +22,6 @@ export const createWeatherLayer = (
       break;
     case "wind":
       weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?appid=${openWeatherKey}`;
-      break;
-    case "pressure":
-      // Enhanced pressure layer with better color palette for visibility
-      weatherUrl = `https://maps.openweathermap.org/maps/2.0/weather/APM/{z}/{x}/{y}?appid=${openWeatherKey}&fill_bound=true&opacity=0.8&palette=950:8b00ff;970:0000ff;990:00ff00;1010:ffff00;1030:ff7f00;1050:ff0000`;
-      opacity = 0.8;
       break;
   }
 

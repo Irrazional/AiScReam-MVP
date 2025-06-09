@@ -41,14 +41,13 @@ export const RadarMap: React.FC<RadarMapProps> = ({
   const [activeLayer, setActiveLayer] = useState<WeatherLayerType>("precipitation");
   const [isLoading, setIsLoading] = useState(false);
   const [showRealTimeStats, setShowRealTimeStats] = useState(false);
-  const [mapInitialized, setMapInitialized] = useState(false);
   const { theme } = useTheme();
 
-  // Initialize map and base layer together
+  // Initialize map once and for all
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    console.log("Initializing map with theme:", theme);
+    console.log("Initializing map...");
 
     const expandedBounds = L.latLngBounds(
       L.latLng(-6.7, 106.6),
@@ -68,28 +67,23 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
     mapInstanceRef.current = map;
 
-    // Add base layer immediately during initialization
+    // Add initial base layer
     baseLayerRef.current = createBaseLayer(theme);
     baseLayerRef.current.addTo(map);
 
-    // Mark map as initialized after a short delay to ensure everything is ready
-    setTimeout(() => {
-      setMapInitialized(true);
-      console.log("Map initialization complete");
-    }, 100);
+    console.log("Map initialization complete");
 
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
-        setMapInitialized(false);
       }
     };
-  }, [theme]); // Include theme in dependency to reinitialize when theme changes
+  }, []); // Remove theme dependency to prevent recreation
 
-  // Update base layer when theme changes (only after map is initialized)
+  // Update base layer when theme changes
   useEffect(() => {
-    if (!mapInstanceRef.current || !mapInitialized) return;
+    if (!mapInstanceRef.current) return;
 
     console.log("Updating base layer for theme:", theme);
 
@@ -101,16 +95,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     // Add new base layer
     baseLayerRef.current = createBaseLayer(theme);
     baseLayerRef.current.addTo(mapInstanceRef.current);
-  }, [theme, mapInitialized]);
+  }, [theme]);
 
-  // Optimized weather layer addition with better error handling
+  // Optimized weather layer addition
   const addWeatherLayer = useCallback((layerType: WeatherLayerType) => {
-    if (!mapInstanceRef.current || !openWeatherKey || !mapInitialized) return;
+    if (!mapInstanceRef.current || !openWeatherKey) return;
 
     console.log("Adding weather layer:", layerType);
     setIsLoading(true);
 
-    // Clear existing weather layers efficiently
+    // Clear existing weather layers
     if (weatherLayersRef.current.length > 0) {
       weatherLayersRef.current.forEach((layer) => {
         mapInstanceRef.current?.removeLayer(layer);
@@ -145,7 +139,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
     weatherLayer.addTo(mapInstanceRef.current);
     weatherLayersRef.current.push(weatherLayer);
-  }, [openWeatherKey, mapInitialized]);
+  }, [openWeatherKey]);
 
   const handleApiKeySubmit = useCallback((key: string) => {
     console.log("Setting API key:", key.substring(0, 8) + "...");
@@ -158,16 +152,16 @@ export const RadarMap: React.FC<RadarMapProps> = ({
     setOpenWeatherKey("");
   }, []);
 
-  // Update weather layer when key, active layer changes, or map is initialized
+  // Update weather layer when key or active layer changes
   useEffect(() => {
-    if (openWeatherKey && mapInitialized) {
+    if (openWeatherKey && mapInstanceRef.current) {
       addWeatherLayer(activeLayer);
     }
-  }, [openWeatherKey, activeLayer, addWeatherLayer, mapInitialized]);
+  }, [openWeatherKey, activeLayer, addWeatherLayer]);
 
   // Update markers efficiently
   useEffect(() => {
-    if (!mapInstanceRef.current || !mapInitialized) return;
+    if (!mapInstanceRef.current) return;
 
     // Clear existing markers
     markersRef.current.forEach((marker) => {
@@ -215,7 +209,7 @@ export const RadarMap: React.FC<RadarMapProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation, onLocationSelect, mapInitialized]);
+  }, [locations, selectedLocation, onLocationSelect]);
 
   if (!openWeatherKey) {
     return <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />;
@@ -231,12 +225,12 @@ export const RadarMap: React.FC<RadarMapProps> = ({
       )}
 
       {/* Loading indicator */}
-      {(isLoading || !mapInitialized) && (
+      {isLoading && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-20">
           <div className="flex items-center space-x-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
             <span className="text-gray-700 dark:text-gray-300">
-              {!mapInitialized ? "Initializing map..." : "Loading weather data..."}
+              Loading weather data...
             </span>
           </div>
         </div>

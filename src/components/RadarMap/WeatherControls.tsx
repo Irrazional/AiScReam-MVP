@@ -19,7 +19,6 @@ export const WeatherControls: React.FC<WeatherControlsProps> = ({
     { key: "precipitation" as const, label: "Curah Hujan" },
     { key: "temperature" as const, label: "Suhu (Heatmap)" },
     { key: "wind" as const, label: "Angin" },
-    { key: "pressure" as const, label: "Tekanan" },
   ];
 
   return (
