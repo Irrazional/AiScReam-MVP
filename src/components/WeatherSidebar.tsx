@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { LocationData } from "../types/weather";
 import { WeatherCard } from "./WeatherCard";
@@ -51,19 +50,20 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
   // Sort locations based on selected criteria and direction
   const sortedLocations = [...filteredLocations].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortBy) {
       case "risk":
         comparison = (a.weather?.floodRisk || 0) - (b.weather?.floodRisk || 0);
         break;
       case "temperature":
-        comparison = (a.weather?.temperature || 0) - (b.weather?.temperature || 0);
+        comparison =
+          (a.weather?.temperature || 0) - (b.weather?.temperature || 0);
         break;
       default: // name
         comparison = a.name.localeCompare(b.name);
         break;
     }
-    
+
     return sortDirection === "desc" ? -comparison : comparison;
   });
 
@@ -180,7 +180,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
         variant="outline"
         size="icon"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-[100px] left-4 z-40 bg-white/90 backdrop-blur-sm shadow-lg border-gray-300"
+        className="md:hidden fixed top-[220px] left-4 z-40 bg-white/90 backdrop-blur-sm shadow-lg border-gray-300"
       >
         <Menu className="w-5 h-5" />
       </Button>
@@ -197,10 +197,12 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
       <div
         className={cn(
           "w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg transition-transform duration-300 ease-in-out z-50",
-          "md:relative md:translate-x-0",
+          "md:relative md:translate-x-0 md:h-full",
           isOpen
-            ? "fixed left-0 top-0 h-full translate-x-0"
-            : "fixed left-0 top-0 h-full -translate-x-full"
+            ? "fixed left-0 md:left-0 translate-x-0"
+            : "fixed left-0 -translate-x-full",
+          "md:static",
+          "max-md:fixed max-md:top-0 max-md:h-full"
         )}
       >
         {sidebarContent}
