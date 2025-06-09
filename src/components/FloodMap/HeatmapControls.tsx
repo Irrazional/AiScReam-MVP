@@ -41,8 +41,11 @@ export const HeatmapControls: React.FC<HeatmapControlsProps> = ({
       
       {showHeatmap && (
         <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
             💡 Area dengan warna lebih merah menunjukkan risiko banjir yang lebih tinggi
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+            🚰 Hanya Pintu Air yang ditampilkan karena mereka yang mempengaruhi prediksi banjir
           </p>
         </div>
       )}
