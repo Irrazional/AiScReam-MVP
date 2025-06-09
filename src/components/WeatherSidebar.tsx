@@ -114,7 +114,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
           <div className="flex items-center space-x-2 mb-2">
             {getSortIcon()}
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sort by:
+              Sortir:
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -124,7 +124,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
               onClick={() => handleSortChange("name")}
               className="text-xs"
             >
-              Name
+              Nama
             </Button>
             <Button
               variant={sortBy === "risk" ? "default" : "outline"}
@@ -132,7 +132,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
               onClick={() => handleSortChange("risk")}
               className="text-xs"
             >
-              Flood Risk
+              Resiko Banjir
             </Button>
             <Button
               variant={sortBy === "temperature" ? "default" : "outline"}
@@ -140,7 +140,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
               onClick={() => handleSortChange("temperature")}
               className="text-xs"
             >
-              Temperature
+              Suhu
             </Button>
           </div>
         </div>

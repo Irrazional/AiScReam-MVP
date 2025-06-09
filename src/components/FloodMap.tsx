@@ -198,7 +198,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   }, [locations, selectedLocation, onLocationSelect, showHeatmap]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full max-md:h-[calc(100vh-135px)]">
       <div ref={mapRef} className="w-full h-full z-0" style={{ zIndex: 1 }} />
 
       <HeatmapControls
