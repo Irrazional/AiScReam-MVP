@@ -180,7 +180,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
         variant="outline"
         size="icon"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-[220px] left-4 z-40 bg-white/90 backdrop-blur-sm shadow-lg border-gray-300"
+        className="md:hidden absolute top-[220px] left-4 z-40 bg-white/90 backdrop-blur-sm shadow-lg border-gray-300"
       >
         <Menu className="w-5 h-5" />
       </Button>
