@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -5,6 +6,7 @@ import { LocationData } from '../types/weather';
 import { useTheme } from './ThemeProvider';
 import { createFloodHeatmap } from './FloodMap/floodHeatmap';
 import { HeatmapControls } from './FloodMap/HeatmapControls';
+import { createBaseLayer } from './RadarMap/weatherLayers';
 
 interface FloodMapProps {
   locations: LocationData[];
@@ -21,8 +23,7 @@ export const FloodMap: React.FC<FloodMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const heatmapRef = useRef<L.LayerGroup | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const [mapTilerKey, setMapTilerKey] = useState<string>('jNtUhxpPD0rde9ksHxlf');
+  const baseLayerRef = useRef<L.TileLayer | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const { theme } = useTheme();
 
@@ -70,46 +71,35 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     });
   };
 
-  // Update tile layer based on theme
-  useEffect(() => {
-    if (!mapInstanceRef.current || !mapTilerKey) return;
-
-    if (tileLayerRef.current) {
-      mapInstanceRef.current.removeLayer(tileLayerRef.current);
-    }
-
-    const mapStyle = theme === 'dark' ? 'dataviz-dark' : 'topo-v2';
-    
-    tileLayerRef.current = L.tileLayer(`https://api.maptiler.com/maps/${mapStyle}/{z}/{x}/{y}.png?key=${mapTilerKey}`, {
-      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 16,
-    });
-
-    tileLayerRef.current.addTo(mapInstanceRef.current);
-  }, [theme, mapTilerKey]);
-
+  // Initialize map once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Expanded bounds to cover the new area from Bogor to Jakarta
+    console.log("Initializing FloodMap...");
+
     const expandedBounds = L.latLngBounds(
-      L.latLng(-6.7, 106.6), // Southwest coordinates (further south to include Bogor)
-      L.latLng(-6.0, 107.0)  // Northeast coordinates
+      L.latLng(-6.7, 106.6),
+      L.latLng(-6.0, 107.0)
     );
 
     const map = L.map(mapRef.current, {
       maxBounds: expandedBounds,
       maxBoundsViscosity: 1.0,
       minZoom: 9,
-      maxZoom: 16
-    }).setView([-6.35, 106.82], 10); // Centered to cover all locations
+      maxZoom: 16,
+    }).setView([-6.35, 106.82], 10);
 
-    // Set the map container z-index lower than popover
     if (mapRef.current) {
       mapRef.current.style.zIndex = '1';
     }
 
     mapInstanceRef.current = map;
+
+    // Add initial base layer
+    baseLayerRef.current = createBaseLayer(theme);
+    baseLayerRef.current.addTo(map);
+
+    console.log("FloodMap initialization complete");
 
     return () => {
       if (mapInstanceRef.current) {
@@ -118,6 +108,22 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       }
     };
   }, []);
+
+  // Update base layer when theme changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    console.log("Updating FloodMap base layer for theme:", theme);
+
+    // Remove existing base layer
+    if (baseLayerRef.current) {
+      mapInstanceRef.current.removeLayer(baseLayerRef.current);
+    }
+
+    // Add new base layer
+    baseLayerRef.current = createBaseLayer(theme);
+    baseLayerRef.current.addTo(mapInstanceRef.current);
+  }, [theme]);
 
   // Update markers/heatmap display
   useEffect(() => {
@@ -136,8 +142,9 @@ export const FloodMap: React.FC<FloodMapProps> = ({
     }
 
     if (showHeatmap) {
-      // Show heatmap
-      heatmapRef.current = createFloodHeatmap(locations);
+      // Show heatmap - only include watergates for flood risk assessment
+      const watergateLocations = locations.filter(location => location.type === 'watergate');
+      heatmapRef.current = createFloodHeatmap(watergateLocations);
       heatmapRef.current.addTo(mapInstanceRef.current);
     } else {
       // Show markers
@@ -171,44 +178,6 @@ export const FloodMap: React.FC<FloodMapProps> = ({
       });
     }
   }, [locations, selectedLocation, onLocationSelect, showHeatmap]);
-
-  if (!mapTilerKey) {
-    return (
-      <div className="relative w-full h-full bg-gray-800 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-xl max-w-md">
-          <h3 className="text-gray-900 font-semibold mb-4">MapTiler API Key Required</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Please enter your MapTiler API key to display the interactive map.
-            You can get one for free at{' '}
-            <a href="https://www.maptiler.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-              maptiler.com
-            </a>
-          </p>
-          <input
-            type="text"
-            placeholder="Enter MapTiler API Key"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                setMapTilerKey((e.target as HTMLInputElement).value);
-              }
-            }}
-          />
-          <button
-            onClick={() => {
-              const input = document.querySelector('input[placeholder="Enter MapTiler API Key"]') as HTMLInputElement;
-              if (input?.value) {
-                setMapTilerKey(input.value);
-              }
-            }}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors"
-          >
-            Load Map
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full h-full">
@@ -258,9 +227,11 @@ export const FloodMap: React.FC<FloodMapProps> = ({
                 <span className="text-gray-700 dark:text-gray-300 text-sm">Minimal (0-19%)</span>
               </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Area dengan radius lebih besar menunjukkan risiko banjir yang lebih tinggi
-            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                ℹ️ Heatmap hanya menampilkan Pintu Air karena mereka yang mempengaruhi prediksi banjir di daerah lain
+              </p>
+            </div>
           </>
         ) : (
           <>

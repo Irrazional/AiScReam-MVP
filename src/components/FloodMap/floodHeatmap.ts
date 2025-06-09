@@ -10,56 +10,119 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
 
     const floodRisk = location.weather.floodRisk;
     const [lat, lng] = location.coordinates;
+    const isWatergate = location.type === 'watergate';
 
-    // Create color based on flood risk percentage
-    const color = getFloodRiskColor(floodRisk);
-    const opacity = Math.max(0.3, floodRisk / 100); // Minimum 30% opacity
+    // Larger base radius, with watergates being significantly bigger
+    const baseRadius = isWatergate ? 1800 : 1200; // Watergates 50% larger
+    const riskMultiplier = 1 + (floodRisk / 100) * 2; // Increased multiplier for more dramatic size changes
+    
+    // Create 4 concentric circles for even better gradient effect
+    const circles = [
+      {
+        radius: baseRadius * riskMultiplier * 1.5,
+        opacity: Math.max(0.08, (floodRisk / 100) * 0.15),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 1.2,
+        opacity: Math.max(0.15, (floodRisk / 100) * 0.25),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.8,
+        opacity: Math.max(0.25, (floodRisk / 100) * 0.4),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.4,
+        opacity: Math.max(0.4, (floodRisk / 100) * 0.7),
+        weight: 1
+      }
+    ];
 
-    // Create circular heatmap zones with radius based on flood risk
-    const radius = 500 + (floodRisk / 100) * 1000; // 500m to 1.5km radius
+    const color = getFloodRiskColor(floodRisk, isWatergate);
+    const strokeColor = getFloodRiskStrokeColor(floodRisk, isWatergate);
 
-    const circle = L.circle([lat, lng], {
-      color: color,
-      fillColor: color,
-      fillOpacity: opacity * 0.4,
-      weight: 0,
-      radius: radius,
+    // Create multiple circles for blending effect
+    circles.forEach((circleConfig, index) => {
+      // Enhanced opacity for watergates to make them more prominent
+      const adjustedOpacity = isWatergate ? circleConfig.opacity * 1.3 : circleConfig.opacity;
+      
+      const circle = L.circle([lat, lng], {
+        color: index === 3 ? strokeColor : color,
+        fillColor: color,
+        fillOpacity: Math.min(0.8, adjustedOpacity), // Cap at 0.8 to prevent too solid colors
+        weight: circleConfig.weight,
+        radius: circleConfig.radius,
+        opacity: index === 3 ? (isWatergate ? 0.8 : 0.6) : (isWatergate ? 0.4 : 0.3)
+      });
+
+      // Only add popup to the center circle
+      if (index === 3) {
+        circle.bindPopup(`
+          <div class="p-3">
+            <h3 class="font-semibold text-gray-900 mb-2">${location.name}</h3>
+            <div class="space-y-1">
+              <p class="text-sm"><span class="font-medium">Risiko Banjir:</span> ${floodRisk}%</p>
+              <p class="text-sm"><span class="font-medium">Status:</span> ${getFloodRiskStatus(floodRisk)}</p>
+              <p class="text-sm"><span class="font-medium">Jenis:</span> ${location.type === 'watergate' ? 'Pintu Air' : 'Daerah'}</p>
+              ${isWatergate ? '<p class="text-xs text-blue-600 font-medium mt-1">⚠️ Lokasi kritis untuk prediksi banjir</p>' : ''}
+              <div class="mt-2 w-full h-2 bg-gray-200 rounded-full">
+                <div 
+                  class="h-full rounded-full" 
+                  style="width: ${floodRisk}%; background-color: ${color};"
+                ></div>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      heatmapGroup.addLayer(circle);
     });
-
-    // Add popup with flood risk information
-    circle.bindPopup(`
-      <div class="p-3">
-        <h3 class="font-semibold text-gray-900 mb-2">${location.name}</h3>
-        <div class="space-y-1">
-          <p class="text-sm"><span class="font-medium">Risiko Banjir:</span> ${floodRisk}%</p>
-          <p class="text-sm"><span class="font-medium">Status:</span> ${getFloodRiskStatus(floodRisk)}</p>
-          <p class="text-sm"><span class="font-medium">Jenis:</span> ${location.type === 'watergate' ? 'Pintu Air' : 'Daerah'}</p>
-        </div>
-      </div>
-    `);
-
-    heatmapGroup.addLayer(circle);
   });
 
   return heatmapGroup;
 };
 
-const getFloodRiskColor = (risk: number): string => {
-  // Create gradient from green to red based on risk percentage
-  if (risk >= 80) return '#dc2626'; // red-600
-  if (risk >= 70) return '#ea580c'; // orange-600
-  if (risk >= 60) return '#f59e0b'; // amber-500
-  if (risk >= 50) return '#eab308'; // yellow-500
-  if (risk >= 40) return '#84cc16'; // lime-500
-  if (risk >= 30) return '#22c55e'; // green-500
-  if (risk >= 20) return '#16a34a'; // green-600
-  return '#15803d'; // green-700
+const getFloodRiskColor = (risk: number, isWatergate: boolean = false): string => {
+  // More vibrant colors with enhanced intensity for watergates
+  const colorIntensity = isWatergate ? 1.0 : 0.85; // Watergates get more intense colors
+  
+  if (risk >= 90) return isWatergate ? '#b91c1c' : '#dc2626'; // darker red for watergates
+  if (risk >= 80) return isWatergate ? '#dc2626' : '#ef4444'; 
+  if (risk >= 70) return isWatergate ? '#ea580c' : '#f97316'; 
+  if (risk >= 60) return isWatergate ? '#d97706' : '#f59e0b'; 
+  if (risk >= 50) return isWatergate ? '#ca8a04' : '#eab308'; 
+  if (risk >= 40) return isWatergate ? '#84cc16' : '#a3e635'; 
+  if (risk >= 30) return isWatergate ? '#16a34a' : '#22c55e'; 
+  if (risk >= 20) return isWatergate ? '#15803d' : '#16a34a'; 
+  if (risk >= 10) return isWatergate ? '#166534' : '#15803d'; 
+  return isWatergate ? '#14532d' : '#166534';
+};
+
+const getFloodRiskStrokeColor = (risk: number, isWatergate: boolean = false): string => {
+  // Even darker stroke colors for better definition, especially for watergates
+  if (risk >= 90) return isWatergate ? '#7f1d1d' : '#991b1b'; 
+  if (risk >= 80) return isWatergate ? '#991b1b' : '#b91c1c'; 
+  if (risk >= 70) return isWatergate ? '#9a3412' : '#c2410c'; 
+  if (risk >= 60) return isWatergate ? '#b45309' : '#d97706'; 
+  if (risk >= 50) return isWatergate ? '#a16207' : '#ca8a04'; 
+  if (risk >= 40) return isWatergate ? '#4d7c0f' : '#65a30d'; 
+  if (risk >= 30) return isWatergate ? '#15803d' : '#16a34a'; 
+  if (risk >= 20) return isWatergate ? '#166534' : '#15803d'; 
+  if (risk >= 10) return isWatergate ? '#14532d' : '#166534'; 
+  return isWatergate ? '#052e16' : '#14532d';
 };
 
 const getFloodRiskStatus = (risk: number): string => {
+  if (risk >= 90) return 'Ekstrem';
   if (risk >= 80) return 'Sangat Tinggi';
-  if (risk >= 60) return 'Tinggi';
-  if (risk >= 40) return 'Sedang';
-  if (risk >= 20) return 'Rendah';
-  return 'Sangat Rendah';
+  if (risk >= 70) return 'Tinggi';
+  if (risk >= 60) return 'Sedang-Tinggi';
+  if (risk >= 50) return 'Sedang';
+  if (risk >= 40) return 'Rendah-Sedang';
+  if (risk >= 30) return 'Rendah';
+  if (risk >= 20) return 'Sangat Rendah';
+  return 'Minimal';
 };
