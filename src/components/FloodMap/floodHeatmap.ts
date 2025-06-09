@@ -1,4 +1,3 @@
-
 import L from 'leaflet';
 import { LocationData } from '../../types/weather';
 
@@ -16,26 +15,56 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
     const baseRadius = isWatergate ? 1800 : 1200; // Watergates 50% larger
     const riskMultiplier = 1 + (floodRisk / 100) * 2; // Increased multiplier for more dramatic size changes
     
-    // Create 4 concentric circles for even better gradient effect
+    // Create 10 circles for smoother gradient
     const circles = [
       {
         radius: baseRadius * riskMultiplier * 1.5,
-        opacity: Math.max(0.08, (floodRisk / 100) * 0.15),
+        opacity: Math.max(0.02, (floodRisk / 100) * 0.05),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 1.35,
+        opacity: Math.max(0.04, (floodRisk / 100) * 0.08),
         weight: 0
       },
       {
         radius: baseRadius * riskMultiplier * 1.2,
-        opacity: Math.max(0.15, (floodRisk / 100) * 0.25),
+        opacity: Math.max(0.06, (floodRisk / 100) * 0.12),
         weight: 0
       },
       {
-        radius: baseRadius * riskMultiplier * 0.8,
-        opacity: Math.max(0.25, (floodRisk / 100) * 0.4),
+        radius: baseRadius * riskMultiplier * 1.05,
+        opacity: Math.max(0.08, (floodRisk / 100) * 0.16),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.9,
+        opacity: Math.max(0.12, (floodRisk / 100) * 0.2),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.75,
+        opacity: Math.max(0.16, (floodRisk / 100) * 0.25),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.65,
+        opacity: Math.max(0.2, (floodRisk / 100) * 0.3),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.55,
+        opacity: Math.max(0.25, (floodRisk / 100) * 0.35),
+        weight: 0
+      },
+      {
+        radius: baseRadius * riskMultiplier * 0.45,
+        opacity: Math.max(0.3, (floodRisk / 100) * 0.4),
         weight: 0
       },
       {
         radius: baseRadius * riskMultiplier * 0.4,
-        opacity: Math.max(0.4, (floodRisk / 100) * 0.7),
+        opacity: Math.max(0.35, (floodRisk / 100) * 0.5),
         weight: 1
       }
     ];
@@ -46,19 +75,19 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
     // Create multiple circles for blending effect
     circles.forEach((circleConfig, index) => {
       // Enhanced opacity for watergates to make them more prominent
-      const adjustedOpacity = isWatergate ? circleConfig.opacity * 1.3 : circleConfig.opacity;
+      const adjustedOpacity = isWatergate ? Math.min(0.5, circleConfig.opacity * 1.3) : circleConfig.opacity;
       
       const circle = L.circle([lat, lng], {
-        color: index === 3 ? strokeColor : color,
+        color: index === 9 ? strokeColor : color,
         fillColor: color,
-        fillOpacity: Math.min(0.8, adjustedOpacity), // Cap at 0.8 to prevent too solid colors
+        fillOpacity: Math.min(0.5, adjustedOpacity), // Cap at 0.5 to prevent too solid colors
         weight: circleConfig.weight,
         radius: circleConfig.radius,
-        opacity: index === 3 ? (isWatergate ? 0.8 : 0.6) : (isWatergate ? 0.4 : 0.3)
+        opacity: index === 9 ? (isWatergate ? 0.5 : 0.4) : (isWatergate ? 0.3 : 0.2)
       });
 
       // Only add popup to the center circle
-      if (index === 3) {
+      if (index === 9) {
         circle.bindPopup(`
           <div class="p-3">
             <h3 class="font-semibold text-gray-900 mb-2">${location.name}</h3>
@@ -87,7 +116,7 @@ export const createFloodHeatmap = (locations: LocationData[]): L.LayerGroup => {
 
 const getFloodRiskColor = (risk: number, isWatergate: boolean = false): string => {
   // More vibrant colors with enhanced intensity for watergates
-  const colorIntensity = isWatergate ? 1.0 : 0.85; // Watergates get more intense colors
+  const colorIntensity = isWatergate ? 1.0 : 0.01; // Watergates get more intense colors
   
   if (risk >= 90) return isWatergate ? '#b91c1c' : '#dc2626'; // darker red for watergates
   if (risk >= 80) return isWatergate ? '#dc2626' : '#ef4444'; 
