@@ -1,212 +1,152 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { LocationData } from "../types/weather";
-import { WeatherCard } from "./WeatherCard";
-import { LocationFilter, FilterOptions } from "./LocationFilter";
-import { ArrowUpDown, ArrowUp, ArrowDown, Menu, X } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "../lib/utils";
+import { WeatherIcon } from "./WeatherIcon";
+import { Progress } from "./ui/progress";
+import { X } from "lucide-react";
 
 interface WeatherSidebarProps {
-  locations: LocationData[];
-  loading: boolean;
-  sortBy: "name" | "risk" | "temperature";
-  onSortChange: (sort: "name" | "risk" | "temperature") => void;
-  onLocationSelect: (location: LocationData) => void;
-  selectedLocation: LocationData | null;
-  filters: FilterOptions;
-  onFilterChange: (filters: FilterOptions) => void;
-  isRealTime: boolean;
+  location: LocationData | null;
+  onClose: () => void;
 }
 
 export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
-  locations,
-  loading,
-  sortBy,
-  onSortChange,
-  onLocationSelect,
-  selectedLocation,
-  filters,
-  onFilterChange,
-  isRealTime,
+  location,
+  onClose,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  if (!location || !location.weather) {
+    return null;
+  }
 
-  const watergateCount = locations.filter(
-    (location) => location.type === "watergate"
-  ).length;
-  const villageCount = locations.filter(
-    (location) => location.type === "village"
-  ).length;
-
-  const filteredLocations = locations.filter((location) => {
-    if (location.type === "watergate") {
-      return filters.showWatergates;
-    } else {
-      return filters.showVillages;
-    }
-  });
-
-  // Sort locations based on selected criteria and direction
-  const sortedLocations = [...filteredLocations].sort((a, b) => {
-    let comparison = 0;
-
-    switch (sortBy) {
-      case "risk":
-        comparison = (a.weather?.floodRisk || 0) - (b.weather?.floodRisk || 0);
-        break;
-      case "temperature":
-        comparison =
-          (a.weather?.temperature || 0) - (b.weather?.temperature || 0);
-        break;
-      default: // name
-        comparison = a.name.localeCompare(b.name);
-        break;
-    }
-
-    return sortDirection === "desc" ? -comparison : comparison;
-  });
-
-  const handleSortChange = (newSortBy: "name" | "risk" | "temperature") => {
-    if (newSortBy === sortBy) {
-      // Toggle direction if same sort criteria
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      // New sort criteria, default to ascending
-      onSortChange(newSortBy);
-      setSortDirection("asc");
-    }
+  const getRiskColor = (risk: number) => {
+    if (risk >= 80) return "text-red-600 dark:text-red-400";
+    if (risk >= 60) return "text-orange-600 dark:text-orange-400";
+    if (risk >= 40) return "text-yellow-600 dark:text-yellow-400";
+    return "text-green-600 dark:text-green-400";
   };
 
-  const getSortIcon = () => {
-    if (sortDirection === "asc") {
-      return <ArrowUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
-    } else {
-      return <ArrowDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
-    }
+  const getRiskBgColor = (risk: number) => {
+    if (risk >= 80) return "bg-red-100 dark:bg-red-900/20";
+    if (risk >= 60) return "bg-orange-100 dark:bg-orange-900/20";
+    if (risk >= 40) return "bg-yellow-100 dark:bg-yellow-900/20";
+    return "bg-green-100 dark:bg-green-900/20";
   };
 
-  const sidebarContent = (
-    <>
-      <div className="flex-shrink-0 p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-            Weather Locations
+  return (
+    <div className="fixed top-0 right-0 h-full w-96 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 z-50 overflow-y-auto">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Detail Cuaca
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(false)}
-            className="md:hidden"
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
-          </Button>
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
         </div>
 
-        <LocationFilter
-          filters={filters}
-          onFilterChange={onFilterChange}
-          watergateCount={watergateCount}
-          villageCount={villageCount}
-        />
-
-        <div className="mt-3 md:mt-4">
-          <div className="flex items-center space-x-2 mb-2">
-            {getSortIcon()}
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sortir:
-            </span>
+        <div className="space-y-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {location.name}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {location.type === "watergate" ? "Pintu Air" : "Daerah"}
+            </p>
+            <WeatherIcon
+              weatherCode={location.weather.weatherCode}
+              className="w-16 h-16 mx-auto mb-4"
+            />
+            <p className="text-gray-600 dark:text-gray-400">
+              {location.weather.description}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={sortBy === "name" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSortChange("name")}
-              className="text-xs"
-            >
-              Nama
-            </Button>
-            <Button
-              variant={sortBy === "risk" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSortChange("risk")}
-              className="text-xs"
-            >
-              Resiko Banjir
-            </Button>
-            <Button
-              variant={sortBy === "temperature" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSortChange("temperature")}
-              className="text-xs"
-            >
-              Suhu
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Loading weather data...
+          <div className="space-y-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                Kondisi Cuaca
+              </h4>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Suhu</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {location.weather.temperature}°C
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Kelembaban
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {location.weather.humidity}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Curah Hujan
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {location.weather.precipitation.toFixed(3)}mm
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Kecepatan Angin
+                  </span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {location.weather.windSpeed} km/h
+                  </span>
+                </div>
+                {location.weather.waterLevel !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Tinggi Air
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {location.weather.waterLevel}m
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`rounded-lg p-4 ${getRiskBgColor(
+                location.weather.floodRisk
+              )}`}
+            >
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  Risiko Banjir
+                </h4>
+                <span
+                  className={`text-lg font-bold ${getRiskColor(
+                    location.weather.floodRisk
+                  )}`}
+                >
+                  {location.weather.floodRisk}%
+                </span>
+              </div>
+              <Progress
+                value={location.weather.floodRisk}
+                className="h-3 mb-2"
+              />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {location.weather.floodRisk >= 80
+                  ? "Risiko sangat tinggi - Siaga darurat"
+                  : location.weather.floodRisk >= 60
+                  ? "Risiko tinggi - Waspada"
+                  : location.weather.floodRisk >= 40
+                  ? "Risiko sedang - Pantau kondisi"
+                  : "Risiko rendah - Kondisi normal"}
               </p>
             </div>
           </div>
-        ) : (
-          <div className="p-2 md:p-3 space-y-2 md:space-y-3">
-            {sortedLocations.map((location) => (
-              <WeatherCard
-                key={location.id}
-                location={location}
-                isSelected={selectedLocation?.id === location.id}
-                onSelect={() => onLocationSelect(location)}
-                isRealTime={isRealTime}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-    </>
-  );
-
-  return (
-    <>
-      {/* Mobile toggle button */}
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-        className="md:hidden absolute top-[220px] left-4 z-40 bg-white/90 backdrop-blur-sm shadow-lg border-gray-300"
-      >
-        <Menu className="w-5 h-5" />
-      </Button>
-
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg transition-transform duration-300 ease-in-out z-50",
-          "md:relative md:translate-x-0 md:h-full",
-          isOpen
-            ? "fixed left-0 md:left-0 translate-x-0"
-            : "fixed left-0 -translate-x-full",
-          "md:static",
-          "max-md:fixed max-md:top-0 max-md:h-full"
-        )}
-      >
-        {sidebarContent}
-      </div>
-    </>
+    </div>
   );
 };
