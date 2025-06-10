@@ -57,6 +57,7 @@ export const WeatherSidebar: React.FC<WeatherSidebarProps> = ({
             </p>
             <WeatherIcon
               weatherCode={location.weather.weatherCode}
+              floodRisk={location.weather.floodRisk}
               className="w-16 h-16 mx-auto mb-4"
             />
             <p className="text-gray-600 dark:text-gray-400">

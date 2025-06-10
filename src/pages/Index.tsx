@@ -154,6 +154,10 @@ const IndexContent = () => {
     }
   });
 
+  const handleCloseDetailSidebar = () => {
+    setSelectedLocation(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <Header
@@ -165,15 +169,8 @@ const IndexContent = () => {
       <div className="flex h-[calc(100vh-80px)]">
         {/* <ForecastForm /> button to fetch forecast */}
         <WeatherSidebar
-          locations={locations}
-          loading={loading}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          onLocationSelect={setSelectedLocation}
-          selectedLocation={selectedLocation}
-          filters={filters}
-          onFilterChange={setFilters}
-          isRealTime={isRealTime}
+          location={selectedLocation}
+          onClose={handleCloseDetailSidebar}
         />
         <div className="flex-1">
           {currentView === "basic" ? (

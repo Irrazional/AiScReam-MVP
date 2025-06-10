@@ -60,6 +60,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           </div>
           <WeatherIcon
             weatherCode={location.weather.weatherCode}
+            floodRisk={location.weather.floodRisk}
             className="w-12 h-12"
           />
         </div>
